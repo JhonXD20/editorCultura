@@ -1,0 +1,355 @@
+/* Reset e configurações básicas */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #4CAF50 75%, #2196F3 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+    touch-action: manipulation;
+}
+
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: row; /* agora lado a lado */
+    align-items: center; /* centraliza verticalmente */
+    justify-content: space-between;
+    position: relative;
+    padding: 1rem;
+    gap: 2rem; /* espaço entre logo e grid */
+}
+
+/* Header */
+.header {
+    padding: 2rem 1rem;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+}
+
+.logo-col {
+    flex: 0 0 30%; /* ocupa 30% da largura */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-col img {
+    max-width: 100%;
+    max-height: 80vh; /* garante que caiba na tela */
+    object-fit: contain;
+}
+.logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+
+.hand {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    transform-origin: center bottom;
+}
+
+
+/* Grid de navegação */
+
+
+
+.navigation-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    padding: 1rem;
+    max-height: 90vh; /* impede scroll vertical */
+    overflow: hidden; /* garante tudo visível */
+}
+
+.nav-item {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.2);
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.nav-item:hover::before {
+    left: 100%;
+}
+
+.nav-item:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    background: rgba(255, 255, 255, 1);
+}
+
+.nav-item:active {
+    transform: translateY(-4px) scale(0.98);
+}
+
+/* Ícones circulares */
+.nav-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.icon-circle {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF6B35, #F7931E);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+    transition: all 0.3s ease;
+    padding: 10px;
+}
+
+.nav-item:hover .icon-circle {
+    transform: rotate(360deg);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+}
+
+/* Imagens dos ícones */
+.icon-circle img {
+    width: 75px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+/* Títulos dos itens */
+.nav-item h3 {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #2C3E50;
+    text-transform: uppercase;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+}
+.nav-item h3{
+    margin-top: 1rem;
+}
+
+
+
+@keyframes wave {
+    0%, 100% {
+        transform: translateX(-50%) translateY(0px);
+    }
+    50% {
+        transform: translateX(-50%) translateY(-20px);
+    }
+}
+
+.footer-logo {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10;
+    padding: 10px 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.footer-logo img {
+    height: 80px;
+}
+
+/* Responsividade para tablets */
+
+@media (max-width: 1024px) {
+    
+    .container {
+        /* Espaço moderado entre a logo e o menu */
+        gap: 1rem; 
+        padding: 1rem 2rem; /* Mais margem nas laterais para não colar na borda */
+        overflow-x: hidden;
+    }
+
+    /* --- 1. LOGO: O MEIO TERMO (25% da largura) --- */
+    .logo-col {
+        flex: 0 0 25%; /* Ocupa 1/4 da tela */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .logo-tree {
+        width: 100%;
+        max-width: none; 
+    }
+
+    .logo-col img {
+        /* Altura controlada: nem pequena, nem estourada */
+        max-height: 65vh; 
+        width: auto;
+        max-width: 100%; /* Garante que não vaze para os lados */
+    }
+
+    /* --- 2. GRID: 4 Colunas para caber tudo --- */
+    .navigation-grid {
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 1rem; /* Espaço padrão */
+        padding: 0;
+    }
+    
+    .nav-item {
+        width: auto; 
+        min-height: 150px; 
+        padding: 1rem;
+    }
+    
+    .nav-icon {
+        width: 65px;
+        height: 65px;
+        margin-bottom: 0.5rem;   
+    }
+
+    .nav-item h3 {
+        font-size: 0.8rem; 
+        margin-top: 0.5rem;
+    }
+}
+/* Responsividade para smartphones */
+@media (max-width: 768px) {
+    .navigation-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .header {
+        padding: 1.5rem 1rem;
+    }
+    
+    .main-title {
+        font-size: 1.8rem;
+    }
+    
+    
+    .nav-item {
+        min-height: 140px;
+        padding: 1rem;
+        border-radius: 15px;
+    }
+    
+    .nav-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .nav-item h3 {
+        font-size: 0.9rem;
+    }
+    
+    .footer {
+        height: 120px;
+    }
+}
+
+/* Responsividade para smartphones pequenos */
+@media (max-width: 480px) {
+    .navigation-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+        padding: 0.8rem;
+    }
+    
+    .main-title {
+        font-size: 1.5rem;
+    }
+    
+    .nav-item {
+        min-height: 120px;
+        padding: 0.8rem;
+    }
+    
+    .nav-icon {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .nav-item h3 {
+        font-size: 0.8rem;
+    }
+}
+
+/* Melhorias para touch */
+@media (hover: none) and (pointer: coarse) {
+    .nav-item {
+        min-height: 160px;
+        padding: 1.5rem;
+    }
+    
+    .nav-item:hover {
+        transform: none;
+    }
+    
+    .nav-item:active {
+        transform: scale(0.95);
+        background: rgba(255, 255, 255, 0.8);
+    }
+}
+
+/* Animações de entrada */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nav-item {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.nav-item:nth-child(1) { animation-delay: 0.1s; }
+.nav-item:nth-child(2) { animation-delay: 0.2s; }
+.nav-item:nth-child(3) { animation-delay: 0.3s; }
+.nav-item:nth-child(4) { animation-delay: 0.4s; }
+.nav-item:nth-child(5) { animation-delay: 0.5s; }
+.nav-item:nth-child(6) { animation-delay: 0.6s; }
+.nav-item:nth-child(7) { animation-delay: 0.7s; }
+.nav-item:nth-child(8) { animation-delay: 0.8s; }
+.nav-item:nth-child(9) { animation-delay: 0.9s; }
+

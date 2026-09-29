@@ -10,9 +10,9 @@
 <div class="d-flex justify-content-between align-items-center custom-header mb-3">
     <div>
         <!-- Os yields permitem que cada tela injete seu próprio título e data -->
-        <h1 class="font-serif text-main mb-1">@yield('header_title', 'Visão Geral')</h1>
+        <h1 class="font-serif text-main mb-1">@yield('header_title', '')</h1>
         <p class="text-muted-custom mb-0 text-lowercase" style="text-transform: none !important;">
-            @yield('header_subtitle', 'Bem-vindo ao sistema')
+            @yield('header_subtitle', '')
         </p>
     </div>
     <div class="d-flex align-items-center text-green text-muted-custom">

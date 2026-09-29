@@ -1,0 +1,110 @@
+/* O Canvas principal com o fundo correto */
+#canvasTotem.totem-preview-wrapper {
+    position: relative !important;
+    background: linear-gradient(135deg, #ff7a00 0%, #ffc107 40%, #8bc34a 70%, #03a9f4 100%) !important;
+    height: calc(100vh - 140px) !important;
+    min-height: 520px !important;
+    width: 100% !important;
+    border-radius: 6px;
+    overflow: hidden !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+    display: block !important;
+}
+
+/* Elemento Livre na tela */
+#canvasTotem .elemento-livre {
+    position: absolute !important;
+    margin: 0 !important;
+    transform: none !important;
+    z-index: 10;
+    touch-action: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Logo Livre */
+#canvasTotem .logo-livre { text-align: center; align-items: center; }
+#canvasTotem .logo-livre img {
+    width: 100%; height: 100%; object-fit: contain;
+    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.4));
+    pointer-events: none !important; -webkit-user-drag: none !important;
+}
+
+/* Botões Livres */
+#canvasTotem .card-botao-totem {
+    background: #ffffff !important; border-radius: 15px !important;
+    padding: 15px 10px !important; align-items: center !important;
+    text-align: center !important; text-decoration: none !important;
+    color: #333333 !important; box-shadow: 0 6px 15px rgba(0,0,0,0.25) !important;
+    cursor: pointer; min-width: 90px; min-height: 90px;
+}
+#canvasTotem .card-botao-totem .icon-circle {
+    width: 65px; height: 65px; border-radius: 50%; border: 3px solid #ff7a00;
+    margin-bottom: 12px; display: flex; align-items: center;
+    justify-content: center; overflow: hidden; background: #fff;
+    pointer-events: none !important; flex-shrink: 0;
+}
+#canvasTotem .card-botao-totem .icon-circle img {
+    width: 100%; height: 100%; object-fit: cover;
+    pointer-events: none !important; -webkit-user-drag: none !important;
+}
+#canvasTotem .card-botao-totem h3 {
+    font-size: 12px !important; font-weight: 800 !important;
+    margin: 0 !important; line-height: 1.3 !important; width: 100%; color: #222 !important;
+}
+
+/* Controles Flutuantes */
+.floating-controls {
+    position: absolute !important; top: 20px !important; right: 20px !important;
+    z-index: 1030 !important; display: flex !important; gap: 12px;
+}
+.floating-controls-left {
+    position: absolute !important; top: 20px !important; left: 20px !important;
+    z-index: 1030 !important; display: none; gap: 12px;
+}
+.modo-edicao-ativo .floating-controls-left { display: flex !important; }
+
+.btn-floating {
+    width: 50px; height: 50px; border-radius: 50%; border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #333; background: #ffffff; cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.35); transition: transform 0.2s;
+}
+.btn-floating:hover:not(:disabled) { transform: scale(1.1); }
+.btn-floating:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.btn-save-mode { background: #28a745 !important; color: #fff !important; display: none; }
+.btn-add-block { background: #17a2b8 !important; color: #fff !important; display: none; }
+.btn-publish { background: #6f42c1 !important; color: #fff !important; }
+.btn-publish:hover { background: #5a32a3 !important; transform: scale(1.1); }
+.btn-change-bg { background: #17a2b8 !important; color: #fff !important; display: none; }
+.btn-change-bg:hover { background: #138496 !important; transform: scale(1.1); }
+
+/* Modo Edição Ativo */
+.modo-edicao-ativo .elemento-livre { outline: 3px dashed #007bff !important; cursor: grab !important; }
+.modo-edicao-ativo .elemento-livre:active { cursor: grabbing !important; outline: 3px solid #ff7a00 !important; z-index: 1000 !important; }
+
+.btn-trocar-img {
+    display: none; position: absolute; top: -12px; right: -12px;
+    background: #ff7a00; color: #fff; border: 2px solid #fff;
+    border-radius: 50%; width: 34px; height: 34px; align-items: center;
+    justify-content: center; font-size: 14px; cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 30;
+}
+.modo-edicao-ativo .btn-trocar-img { display: flex !important; }
+
+.resize-handle {
+    display: none; position: absolute; bottom: -12px; right: -12px;
+    background: #007bff; color: #fff; border: 2px solid #fff;
+    border-radius: 50%; width: 30px; height: 30px; align-items: center;
+    justify-content: center; font-size: 14px; cursor: nwse-resize;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 40;
+}
+.modo-edicao-ativo .resize-handle { display: flex !important; }
+
+.modo-edicao-ativo .texto-editavel[contenteditable="true"] {
+    outline: 2px dashed #ff7a00 !important; padding: 4px; border-radius: 4px;
+    background: #fffdf5 !important; cursor: text !important;
+}

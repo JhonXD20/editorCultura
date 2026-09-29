@@ -1,0 +1,171 @@
+    body {
+    box-sizing: border-box; /* Correção aqui */
+    height: 100vh;
+    margin: 0 !important;
+    overflow: hidden; /* Evita barra de rolagem dupla na página inteira */
+    position: relative;
+    }
+
+    *, *:before, *:after {
+    box-sizing: inherit;
+    }
+
+    .gradiente-bar {
+        height: 3vh;
+        background: linear-gradient(to right, rgb(243, 97, 2), rgb(53, 169, 43), rgb(41, 136, 204));
+        width: 100vw
+    }
+
+    .logo {
+        text-align: center;
+        margin-bottom: 1rem;
+        
+    }
+    .btn-voltar {
+    position: absolute;
+    left: 12px;
+    top: calc(3vh + 6px);
+    z-index: 25;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    }
+
+    .btn-voltar img{
+        top: 20px;
+        width: 80px;
+        height: auto;
+    }
+    .link-logo{
+        margin-left: 42%;
+        margin-right: 50%;
+        display: block;
+        width: 200px;
+        z-index: 15;
+    }
+
+    .logo img {
+        max-width: 200px;
+        height: auto;
+        padding: 5px;
+        border-bottom: 1px solid #a3a2a2 !important; 
+    }
+
+    .ilustration {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%); /* centraliza horizontalmente */
+        width: 100vw;   /* ocupa toda a largura da tela */
+        height: 35vh;   /* altura proporcional (precisa de truque) */
+        background: url('../../img/ilustracao1.png') no-repeat center bottom;
+        background-size: contain; /* mantém proporção da imagem */
+        background-repeat: no-repeat;
+        pointer-events: none;
+        z-index: -1;
+        aspect-ratio: 16 / 9; /* 🔑 mantém proporção da imagem */
+    }
+    .logo-secretaria{
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        max-width: 250px; 
+        height: auto;
+        margin: 1rem 0;
+    }
+    .botao-esquerda, .botao-direita {
+        position: fixed;
+        top: 0; /* Começa do topo para cobrir a altura toda */
+        height: 100%;
+        width: 49%;
+        z-index: 10;
+        cursor: pointer;
+        
+        /* Centralização dos ícones */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .botao-esquerda { left: 0; }
+    .botao-direita { right: 0; }
+
+    .botao-esquerda i, .botao-direita i {
+    opacity: 0; /* Escondidos por padrão */
+    font-size: 2rem; /* Ajuste o tamanho conforme necessário */
+    transition: opacity 0.3s ease;
+    }   
+
+
+    #content-area {
+    opacity: 1;
+    transition: opacity 0.4s ease; /* Duração e suavidade da animação */
+    }
+
+    #content-area.fade-out {
+    opacity: 0;
+    }
+
+    /* =========================================
+MEDIA QUERY: Ajuste para 1024x768 (Tablets/Laptops pequenos)
+   ========================================= */
+@media(max-width: 1024px) {
+
+    /* 1. Corrige o "estouro" do conteúdo de texto/imagem */
+    #content-area {
+        /* Define uma altura máxima para o conteúdo não vazar da tela */
+        max-height: 65vh; 
+        /* Garante que o texto fique ACIMA dos botões laterais invisíveis */
+        position: relative;
+        /* Margem interna para não colar na borda */
+        padding: 0 2rem; 
+    }
+
+    /* 2. Centraliza o logo principal corretamente */
+    .link-logo {
+        width: 150px; /* Reduz um pouco o tamanho */
+        margin: 1rem auto; /* Centraliza horizontalmente de verdade */
+        display: flex;
+        justify-content: center;
+        /* Remove as margens percentuais antigas que quebravam o layout */
+        margin-left: auto;
+        margin-right: auto;
+        z-index: 20;
+    }
+    
+    .logo img {
+        max-width: 100%; /* Garante que a imagem respeite a div pai */
+        height: auto;
+    }
+    .btn-voltar {
+    left: 12px;
+    top: 2rem;
+    }
+    .btn-voltar img{
+        width: 60px;
+        height: auto;
+    }
+
+    /* 3. Ajusta a ilustração do fundo para não ocupar muito espaço */
+    .ilustration {
+        height: 20vh; /* Diminui a altura para sobrar espaço pro texto */
+
+    }
+
+    /* 4. Conserta o Logo da Secretaria deslocado */
+    .logo-secretaria {
+        max-width: 150px; /* Reduz o tamanho para não brigar com o conteúdo */
+        right: 15px;
+        bottom: 15px;
+        /* Garante que fique acima do fundo, mas não bloqueie cliques importantes */
+        z-index: 15; 
+    }
+    .imagem{
+        text-align: center;
+    }
+    .imagem img{
+        max-width: 400px !important;
+    }
+
+
+}

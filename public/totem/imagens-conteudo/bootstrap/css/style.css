@@ -1,0 +1,149 @@
+body{
+	font-size:14px;
+}
+hr{
+    border-top: 1px solid #474545;
+    margin-bottom: 40px;
+}
+.img-margin{
+	margin: 30px auto 30px auto;
+}
+.titulo-patrimonio{
+    margin-bottom: 10px;
+	margin-top: 10px;
+    font-weight: bold;
+	font-size:18px;
+}
+.titulo-pagina{
+    border-bottom: 1px solid #474545;
+}
+.border-autor-foto{
+	border-right: 1px solid;
+}
+#scrollUp {
+    bottom: 20px;
+    right: 20px;
+    font-size: 36px;
+    line-height: 100%;
+    color: #FFF;
+    padding: 3px;
+    -webkit-border-radius: 3px;
+       -moz-border-radius: 3px;
+            border-radius: 3px;
+    opacity: .5;
+}
+#scrollUp:hover {
+    color: #1ABB9C;
+    opacity: 1;
+}
+
+#PgDn {
+    top: 250px;
+    right: 20px;
+    font-size: 36px;
+    line-height: 100%;
+    color: #FFF;
+    padding: 3px;
+    -webkit-border-radius: 3px;
+       -moz-border-radius: 3px;
+            border-radius: 3px;
+    opacity: .5;
+}
+#PgDn:hover {
+    color: #1ABB9C;
+    opacity: 1;
+}
+
+#b-voltar {
+    top: 40px;
+    right: 20px;
+    font-size: 36px;
+    line-height: 100%;
+    color: #FFF;
+    padding: 3px;
+    -webkit-border-radius: 3px;
+       -moz-border-radius: 3px;
+            border-radius: 3px;
+    opacity: .5;
+}
+#b-voltar:hover {
+    color: #1ABB9C;
+    opacity: 1;
+}
+
+#PgUp {
+    top: 115px;
+    right: 20px;
+    font-size: 36px;
+    line-height: 100%;
+    color: #FFF;
+    padding: 3px;
+    -webkit-border-radius: 3px;
+       -moz-border-radius: 3px;
+            border-radius: 3px;
+    opacity: .5;
+}
+#PgUp:hover {
+    color: #1ABB9C;
+    opacity: 1;
+}
+
+
+#home {
+    bottom: 74px;
+    right: 20px;
+    font-size: 36px;
+    line-height: 100%;
+    color: #FFF;
+    padding: 3px;
+    -webkit-border-radius: 3px;
+       -moz-border-radius: 3px;
+            border-radius: 3px;
+    opacity: .5;
+}
+#home:hover {
+    color: #1ABB9C;
+    opacity: 1;
+}
+
+#h-principal {
+    top: 182px;
+    right: 20px;
+    font-size: 36px;
+    line-height: 100%;
+    color: #FFF;
+    padding: 3px;
+    -webkit-border-radius: 3px;
+       -moz-border-radius: 3px;
+            border-radius: 3px;
+    opacity: .5;
+}
+#h-principal:hover {
+    color: #1ABB9C;
+    opacity: 1;
+}
+.btn-navegacao{
+	height: 57px;
+}
+
+
+.nomeAutor{
+    text-align:center;
+    font-size: 24px;
+}
+.h1-tamanho{
+    font-size: 24px;
+}
+.border-autor-descricao{
+    border-left: 1px solid;
+}
+.posi-imagem-autor{
+    float: right;
+}
+.bloco-bio{
+	margin-top:65px;
+}
+.margem-top{
+	margin-top:84px;
+}
+
