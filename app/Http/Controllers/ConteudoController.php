@@ -97,66 +97,78 @@ class ConteudoController extends Controller
     public function salvarEmMassa(Request $request)
     {
         try {
-            $paginaId = $request->input('pagina_id');
+            $paginaId = $request->pagina_id;
+            $blocos = $request->blocos;
 
-            if ($request->filled('pagina_titulo')) {
-                DB::table('paginas')
-                    ->where('id', $paginaId)
-                    ->update([
-                        'pagina_titulo' => $request->input('pagina_titulo'),
-                        'updated_at' => now()
-                    ]);
-            }
+            // Array para guardar os IDs que permanecem no ecrã (para podermos apagar os restantes depois)
+            $idsParaManter = [];
 
-            $blocos = $request->input('blocos', []);
+            foreach ($blocos as $bloco) {
+                $id = $bloco['id'];
+                $tipo = $bloco['tipo'];
+                $dados = json_encode($bloco['dados_conteudo']);
+                $ordem = $bloco['ordem'];
 
-            foreach ($blocos as $blocoData) {
-                $tipo = $blocoData['tipo'] ?? '';
-                $novosDadosJson = json_encode($blocoData['dados_conteudo']);
-
-                // Elementos fixos de layout (Logo na Home ou Título na Subpágina)
-                if (in_array($blocoData['id'], ['novo_logo', 'novo_titulo', 'novo_fundo']) || in_array($tipo, ['logo', 'titulo_pagina', 'fundo'])) {
-                    $registroFixo = DB::table('conteudos')
+                // 1. Elementos fixos da página (Logo, Título e Fundo)
+                if (in_array($id, ['novo_logo', 'novo_titulo', 'novo_fundo']) || in_array($tipo, ['logo', 'titulo_pagina', 'fundo'])) {
+                    $existente = DB::table('conteudos')
                         ->where('pagina_id', $paginaId)
                         ->where('conteudo_tipo_componente', $tipo)
                         ->first();
 
-                    if ($registroFixo) {
-                        DB::table('conteudos')
-                            ->where('id', $registroFixo->id)
-                            ->update([
-                                'conteudo_dados_conteudo' => $novosDadosJson,
-                                'updated_at' => now()
-                            ]);
+                    if ($existente) {
+                        DB::table('conteudos')->where('id', $existente->id)->update([
+                            'conteudo_dados_conteudo' => $dados,
+                            'conteudo_ordem_exibicao' => $ordem,
+                            'updated_at' => now(),
+                        ]);
+                        $idsParaManter[] = $existente->id;
                     } else {
-                        DB::table('conteudos')->insert([
+                        $novoId = DB::table('conteudos')->insertGetId([
                             'pagina_id' => $paginaId,
                             'conteudo_tipo_componente' => $tipo,
-                            'conteudo_ordem_exibicao' => 0,
-                            'conteudo_dados_conteudo' => $novosDadosJson,
+                            'conteudo_dados_conteudo' => $dados,
+                            'conteudo_ordem_exibicao' => $ordem,
                             'created_at' => now(),
-                            'updated_at' => now()
+                            'updated_at' => now(),
                         ]);
+                        $idsParaManter[] = $novoId;
                     }
-                    continue;
                 }
-
-                // Atualiza blocos normais (Botões, Textos, Imagens)
-                DB::table('conteudos')
-                    ->where('id', $blocoData['id'])
-                    ->update([
-                        'conteudo_ordem_exibicao' => $blocoData['ordem'] ?? 1,
-                        'conteudo_dados_conteudo' => $novosDadosJson,
-                        'updated_at' => now()
+                // 2. NOVOS blocos de texto criados dinamicamente no JS (Inserção / INSERT)
+                elseif (is_string($id) && strpos($id, 'novo_texto_') === 0) {
+                    $novoId = DB::table('conteudos')->insertGetId([
+                        'pagina_id' => $paginaId,
+                        'conteudo_tipo_componente' => $tipo,
+                        'conteudo_dados_conteudo' => $dados,
+                        'conteudo_ordem_exibicao' => $ordem,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
+                    $idsParaManter[] = $novoId;
+                }
+                // 3. Atualização de Botões ou Textos que já existiam na base de dados (Têm ID Numérico)
+                else {
+                    DB::table('conteudos')->where('id', $id)->update([
+                        'conteudo_dados_conteudo' => $dados,
+                        'conteudo_ordem_exibicao' => $ordem,
+                        'updated_at' => now(),
+                    ]);
+                    $idsParaManter[] = $id;
+                }
+            }
+
+            // 4. ELIMINAR DA BASE DE DADOS: Apaga todos os elementos desta página que não vieram na requisição (ou seja, os que foram para a Lixeira no ecrã)
+            if (!empty($idsParaManter)) {
+                DB::table('conteudos')
+                    ->where('pagina_id', $paginaId)
+                    ->whereNotIn('id', $idsParaManter)
+                    ->delete();
             }
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
     // Envia o sinal para os totens atualizarem suas telas

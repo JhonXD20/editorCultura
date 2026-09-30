@@ -1,7 +1,6 @@
-/* O Canvas principal com o fundo correto */
+/* O Canvas principal */
 #canvasTotem.totem-preview-wrapper {
     position: relative !important;
-    background: linear-gradient(135deg, #ff7a00 0%, #ffc107 40%, #8bc34a 70%, #03a9f4 100%) !important;
     height: calc(100vh - 140px) !important;
     min-height: 520px !important;
     width: 100% !important;
@@ -14,97 +13,65 @@
 
 /* Elemento Livre na tela */
 #canvasTotem .elemento-livre {
-    position: absolute !important;
-    margin: 0 !important;
-    transform: none !important;
-    z-index: 10;
-    touch-action: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    position: absolute !important; margin: 0 !important; transform: none !important; z-index: 10; touch-action: none; display: flex; flex-direction: column; justify-content: center;
 }
 
 /* Logo Livre */
 #canvasTotem .logo-livre { text-align: center; align-items: center; }
-#canvasTotem .logo-livre img {
-    width: 100%; height: 100%; object-fit: contain;
-    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.4));
-    pointer-events: none !important; -webkit-user-drag: none !important;
-}
+#canvasTotem .logo-livre img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.4)); pointer-events: none !important; -webkit-user-drag: none !important; }
 
 /* Botões Livres */
-#canvasTotem .card-botao-totem {
-    background: #ffffff !important; border-radius: 15px !important;
-    padding: 15px 10px !important; align-items: center !important;
-    text-align: center !important; text-decoration: none !important;
-    color: #333333 !important; box-shadow: 0 6px 15px rgba(0,0,0,0.25) !important;
-    cursor: pointer; min-width: 90px; min-height: 90px;
-}
-#canvasTotem .card-botao-totem .icon-circle {
-    width: 65px; height: 65px; border-radius: 50%; border: 3px solid #ff7a00;
-    margin-bottom: 12px; display: flex; align-items: center;
-    justify-content: center; overflow: hidden; background: #fff;
-    pointer-events: none !important; flex-shrink: 0;
-}
-#canvasTotem .card-botao-totem .icon-circle img {
-    width: 100%; height: 100%; object-fit: cover;
-    pointer-events: none !important; -webkit-user-drag: none !important;
-}
-#canvasTotem .card-botao-totem h3 {
-    font-size: 12px !important; font-weight: 800 !important;
-    margin: 0 !important; line-height: 1.3 !important; width: 100%; color: #222 !important;
-}
+#canvasTotem .card-botao-totem { background: #ffffff !important; border-radius: 15px !important; padding: 15px 10px !important; align-items: center !important; text-align: center !important; text-decoration: none !important; color: #333333 !important; box-shadow: 0 6px 15px rgba(0,0,0,0.25) !important; cursor: pointer; min-width: 90px; min-height: 90px; }
+#canvasTotem .card-botao-totem .icon-circle { margin-bottom: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; pointer-events: none !important; flex-shrink: 0; border: 3px solid #ff7a00; }
+#canvasTotem .card-botao-totem .icon-circle img { width: 100%; height: 100%; object-fit: cover; pointer-events: none !important; -webkit-user-drag: none !important; }
+
+/* Título dos Botões */
+#canvasTotem .card-botao-totem .titulo-botao { font-size: 14px !important; font-weight: 800 !important; margin: 0 !important; line-height: 1.3 !important; width: 100%; color: #222 !important; word-wrap: break-word; }
+#canvasTotem .card-botao-totem .titulo-botao p, #canvasTotem .card-botao-totem .titulo-botao h1, #canvasTotem .card-botao-totem .titulo-botao h2, #canvasTotem .card-botao-totem .titulo-botao h3 { margin-bottom: 0 !important; }
+
+/* Blocos de Texto Avulsos */
+#canvasTotem .bloco-texto-livre { border-radius: 8px; padding: 15px; min-width: 150px; min-height: 60px; color: #333; font-size: 16px; }
+#canvasTotem .bloco-texto-livre .texto-editavel { width: 100%; height: 100%; }
+
+/* O Bloco do Fundo de Imagem */
+#blocoFundoImagem { z-index: 1 !important; /* Fica atrás de tudo */ }
+#blocoFundoImagem.travado { pointer-events: none !important; outline: none !important; }
+#blocoFundoImagem:not(.travado) { outline: 4px dashed #28a745 !important; z-index: 999 !important; /* Vem para a frente para ser fácil de arrastar */ cursor: grab; }
+#blocoFundoImagem:not(.travado):active { cursor: grabbing; }
 
 /* Controles Flutuantes */
-.floating-controls {
-    position: absolute !important; top: 20px !important; right: 20px !important;
-    z-index: 1030 !important; display: flex !important; gap: 12px;
-}
-.floating-controls-left {
-    position: absolute !important; top: 20px !important; left: 20px !important;
-    z-index: 1030 !important; display: none; gap: 12px;
-}
+.floating-controls { position: absolute !important; top: 20px !important; right: 20px !important; z-index: 1030 !important; display: flex !important; gap: 12px; }
+.floating-controls-left { position: absolute !important; top: 20px !important; left: 20px !important; z-index: 1030 !important; display: none; gap: 12px; }
 .modo-edicao-ativo .floating-controls-left { display: flex !important; }
 
-.btn-floating {
-    width: 50px; height: 50px; border-radius: 50%; border: none;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; color: #333; background: #ffffff; cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.35); transition: transform 0.2s;
-}
+.btn-floating { width: 50px; height: 50px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #333; background: #ffffff; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.35); transition: transform 0.2s; }
 .btn-floating:hover:not(:disabled) { transform: scale(1.1); }
 .btn-floating:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-save-mode { background: #28a745 !important; color: #fff !important; display: none; }
 .btn-add-block { background: #17a2b8 !important; color: #fff !important; display: none; }
+.btn-add-text { background: #ffc107 !important; color: #333 !important; display: none; }
 .btn-publish { background: #6f42c1 !important; color: #fff !important; }
 .btn-publish:hover { background: #5a32a3 !important; transform: scale(1.1); }
 .btn-change-bg { background: #17a2b8 !important; color: #fff !important; display: none; }
-.btn-change-bg:hover { background: #138496 !important; transform: scale(1.1); }
+
+/* Botão Laranja do Cadeado */
+.btn-adjust-bg { background: #fd7e14 !important; color: #fff !important; display: none; }
+.btn-success-bg { background: #28a745 !important; color: #fff !important; display: none; } /* Quando aberto */
 
 /* Modo Edição Ativo */
-.modo-edicao-ativo .elemento-livre { outline: 3px dashed #007bff !important; cursor: grab !important; }
-.modo-edicao-ativo .elemento-livre:active { cursor: grabbing !important; outline: 3px solid #ff7a00 !important; z-index: 1000 !important; }
+.modo-edicao-ativo .elemento-livre:not(#blocoFundoImagem) { outline: 3px dashed #007bff !important; cursor: grab !important; }
+.modo-edicao-ativo .elemento-livre:not(#blocoFundoImagem):active { cursor: grabbing !important; outline: 3px solid #ff7a00 !important; z-index: 1000 !important; }
 
-.btn-trocar-img {
-    display: none; position: absolute; top: -12px; right: -12px;
-    background: #ff7a00; color: #fff; border: 2px solid #fff;
-    border-radius: 50%; width: 34px; height: 34px; align-items: center;
-    justify-content: center; font-size: 14px; cursor: pointer;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 30;
-}
-.modo-edicao-ativo .btn-trocar-img { display: flex !important; }
+/* Botões de Ação nos Elementos */
+.btn-trocar-img { display: none; position: absolute; top: -12px; right: -12px; background: #ff7a00; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 34px; height: 34px; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 30; }
+.btn-config-btn { display: none; position: absolute; top: -12px; left: -12px; background: #007bff; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 34px; height: 34px; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 30; }
+.btn-bg-texto { display: none; position: absolute; top: -12px; left: -12px; background: #17a2b8; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 34px; height: 34px; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 30; }
+.btn-delete-element { display: none; position: absolute; bottom: -12px; left: -12px; background: #dc3545; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 34px; height: 34px; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 30; }
+.resize-handle { display: none; position: absolute; bottom: -12px; right: -12px; background: #28a745; color: #fff; border: 2px solid #fff; border-radius: 50%; width: 30px; height: 30px; align-items: center; justify-content: center; font-size: 14px; cursor: nwse-resize; box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 40; }
+.modo-edicao-ativo .btn-trocar-img, .modo-edicao-ativo .btn-config-btn, .modo-edicao-ativo .btn-bg-texto, .modo-edicao-ativo .resize-handle, .modo-edicao-ativo .btn-delete-element { display: flex !important; }
 
-.resize-handle {
-    display: none; position: absolute; bottom: -12px; right: -12px;
-    background: #007bff; color: #fff; border: 2px solid #fff;
-    border-radius: 50%; width: 30px; height: 30px; align-items: center;
-    justify-content: center; font-size: 14px; cursor: nwse-resize;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.3); z-index: 40;
-}
-.modo-edicao-ativo .resize-handle { display: flex !important; }
-
-.modo-edicao-ativo .texto-editavel[contenteditable="true"] {
-    outline: 2px dashed #ff7a00 !important; padding: 4px; border-radius: 4px;
-    background: #fffdf5 !important; cursor: text !important;
-}
+/* Indicador Visual para Textos Editáveis */
+.modo-edicao-ativo .texto-editavel { position: relative; cursor: pointer !important; border: 2px dashed #007bff !important; background: rgba(255, 255, 255, 0.7) !important; padding: 6px; border-radius: 6px; transition: all 0.3s ease; }
+.modo-edicao-ativo .texto-editavel:hover { background: rgba(0, 123, 255, 0.1) !important; border-color: #ff7a00 !important; }
+.modo-edicao-ativo .texto-editavel::after { content: "\f304"; font-family: "Font Awesome 5 Free"; font-weight: 900; position: absolute; top: -10px; right: -10px; background: #007bff; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
