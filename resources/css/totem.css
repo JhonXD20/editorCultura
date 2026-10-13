@@ -1,0 +1,138 @@
+
+/* Visual compartilhado do Totem */
+
+.totem-canvas {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    isolation: isolate;
+    box-sizing: border-box;
+    background-color: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.totem-canvas .elemento-livre {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 0;
+    box-sizing: border-box;
+    z-index: 10;
+}
+
+/* Fundo */
+.totem-canvas .fundo-imagem-livre {
+    z-index: 1;
+    padding: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.totem-canvas .fundo-imagem-livre > .img-alvo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Logo */
+.totem-canvas .logo-livre {
+    align-items: center;
+    text-align: center;
+}
+
+.totem-canvas .logo-livre > .img-alvo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(
+        2px 4px 6px rgba(0, 0, 0, 0.4)
+    );
+}
+
+/* Botões */
+.totem-canvas .card-botao-totem {
+    background-color: #fff;
+    border-radius: 15px;
+    padding: 15px 10px;
+    min-width: 90px;
+    min-height: 90px;
+    align-items: center;
+    text-align: center;
+    color: #333;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, .25);
+}
+
+.totem-canvas .card-botao-totem .nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.totem-canvas .card-botao-totem .icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-bottom: 12px;
+    overflow: hidden;
+    background: #fff;
+    border: 3px solid #ff7a00;
+    pointer-events: none;
+}
+
+.totem-canvas .card-botao-totem .icon-circle img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.totem-canvas .card-botao-totem .titulo-botao {
+    width: 100%;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.3;
+    color: #222;
+    overflow-wrap: break-word;
+}
+
+.totem-canvas .titulo-botao p,
+.totem-canvas .titulo-botao h1,
+.totem-canvas .titulo-botao h2,
+.totem-canvas .titulo-botao h3 {
+    margin-bottom: 0;
+}
+
+/* Blocos de texto */
+.totem-canvas .bloco-texto-livre {
+    min-width: 150px;
+    min-height: 60px;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #333;
+}
+
+.totem-canvas .bloco-texto-livre .texto-editavel {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+.totem-canvas .texto-editavel img {
+    max-width: 100%;
+}
+
+.totem-canvas .texto-editavel p:last-child {
+    margin-bottom: 0;
+}

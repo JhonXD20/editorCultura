@@ -1,3 +1,4 @@
+
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 
@@ -5,12 +6,18 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
-                'resources/sass/app.scss',
+                'resources/css/app.css',
                 'resources/js/app.js',
-                'resources/css/editor.css', // <-- ADICIONE ESTA LINHA
-                'resources/js/editor.js',   // <-- ADICIONE ESTA LINHA
+
+                'resources/css/totem.css',
+                'resources/css/editor.css',
+                'resources/css/publico.css',
+
+                'resources/js/editor.js',
+                'resources/js/publico.js'
             ],
-            refresh: true,
-        }),
-    ],
+
+            refresh: true
+        })
+    ]
 });

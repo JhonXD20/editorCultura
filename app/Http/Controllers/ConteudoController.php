@@ -19,12 +19,25 @@ class ConteudoController extends Controller
 
         // SE O USUÁRIO ESCOLHEU "CRIAR NOVA PÁGINA"
         if ($destinoId === 'nova') {
+            $grupoSlide = $request->input('grupo_slide');
+            $ordemSlide = 0;
+
+            // Inteligência dos Slides: Calcula automaticamente qual é o número deste slide no grupo
+            if (!empty($grupoSlide)) {
+                $maxOrdem = DB::table('paginas')
+                    ->where('grupo_slide', $grupoSlide)
+                    ->max('ordem_slide');
+                $ordemSlide = $maxOrdem ? $maxOrdem + 1 : 1;
+            }
+
             // Cria a página no banco de dados e pega o ID dela gerado na hora
             $destinoId = DB::table('paginas')->insertGetId([
-                'pagina_titulo' => $request->input('nova_pagina_titulo'),
-                'pagina_tipo_layout' => 'interna', // Define que é uma página de conteúdo padrão
-                'created_at' => now(),
-                'updated_at' => now(),
+                'pagina_titulo'      => $request->input('nova_pagina_titulo'),
+                'pagina_tipo_layout' => 'interna',
+                'grupo_slide'        => $grupoSlide, // Guarda o grupo digitado (Ex: História)
+                'ordem_slide'        => $ordemSlide, // Guarda a ordem calculada (Ex: 1, 2, 3...)
+                'created_at'         => now(),
+                'updated_at'         => now(),
             ]);
         }
 
@@ -171,6 +184,7 @@ class ConteudoController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
     // Envia o sinal para os totens atualizarem suas telas
     public function publicar(Request $request)
     {
@@ -178,10 +192,6 @@ class ConteudoController extends Controller
             // Atualiza a coluna 'updated_at' de todos os totens cadastrados.
             // O software do totem pode ler essa data a cada X segundos para saber se deve dar "F5" na tela.
             DB::table('totens')->update(['updated_at' => now()]);
-
-            // DICA: Se você estiver usando WebSockets (como Pusher ou Laravel Reverb), 
-            // você também pode disparar um evento em tempo real aqui:
-            // event(new \App\Events\AtualizarTelaTotem());
 
             return response()->json([
                 'success' => true,

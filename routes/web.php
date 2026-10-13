@@ -6,6 +6,7 @@ use App\Http\Controllers\PaginaController;
 use App\Http\Controllers\TotemController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ConteudoController;
+use App\Http\Controllers\TotemPublicController;
 
 Auth::routes();
 
@@ -29,3 +30,6 @@ Route::get('/relatorios', function () {
 })->middleware('auth')->name('relatorios');
 
 Route::get('/home', [HomeController::class, 'index'])->name('home');
+
+// Rota de Exibição Pública do Totem
+Route::get('/totem/exibir/{id}', [TotemPublicController::class, 'exibir'])->name('totem.exibir');

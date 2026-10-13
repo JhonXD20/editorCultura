@@ -1,0 +1,392 @@
+
+/* ================================================
+   PUBLICO.CSS
+   EXIBIÇÃO PÚBLICA DOS TOTENS INTERATIVOS
+================================================ */
+
+/* ================================================
+   1. CONFIGURAÇÕES GERAIS
+================================================ */
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    background-color: #ffffff;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+
+    touch-action: manipulation;
+    overscroll-behavior: none;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+}
+
+/* ================================================
+   2. ÁREA PRINCIPAL DO TOTEM
+================================================ */
+
+.totem-publico-viewport {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+
+    margin: 0;
+    padding: 0;
+
+    overflow: hidden;
+
+    background-color: #ffffff;
+
+    box-sizing: border-box;
+    isolation: isolate;
+}
+
+/* ================================================
+   3. PALCO DE EXIBIÇÃO
+
+   O publico.js calcula a escala do palco.
+
+   As dimensões originais são definidas pelo
+   JavaScript utilizando os valores salvos no
+   banco de dados.
+================================================ */
+
+#totemStage {
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    margin: 0;
+    padding: 0;
+
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+
+    background-color: transparent;
+
+    isolation: isolate;
+}
+
+/* ================================================
+   4. CANVAS COMPARTILHADO
+
+   IMPORTANTE:
+   Não definir width: 100% nem height: 100%
+   aqui, porque o canvas utiliza a resolução
+   original salva pelo editor.
+================================================ */
+
+.totem-publico-viewport #canvasTotem {
+    position: relative;
+
+    display: block;
+
+    margin: 0;
+    padding: 0;
+
+    overflow: hidden;
+
+    box-sizing: border-box;
+
+    isolation: isolate;
+
+    /* O fundo é definido pelo canvas.blade.php */
+}
+
+/* ================================================
+   5. ELEMENTOS LIVRES
+================================================ */
+
+.totem-publico-viewport
+#canvasTotem .elemento-livre {
+    position: absolute;
+
+    margin: 0;
+
+    box-sizing: border-box;
+
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* ================================================
+   6. IMAGEM DE FUNDO
+
+   Mantém a largura, altura e posição
+   definidas pelo editor.
+================================================ */
+
+.totem-publico-viewport
+#canvasTotem .fundo-imagem-livre {
+    position: absolute;
+
+    z-index: 1;
+
+    margin: 0;
+    padding: 0;
+
+    pointer-events: none;
+
+    border: none;
+}
+
+/* A imagem acompanha as dimensões do bloco */
+.totem-publico-viewport
+#canvasTotem .fundo-imagem-livre > .img-alvo {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: fill;
+
+    pointer-events: none;
+
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* ================================================
+   7. LOGO
+================================================ */
+
+.totem-publico-viewport
+#canvasTotem .logo-livre {
+    position: absolute;
+
+    z-index: 10;
+
+    align-items: center;
+    justify-content: center;
+
+    pointer-events: none;
+}
+
+.totem-publico-viewport
+#canvasTotem .logo-livre > .img-alvo {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+
+    pointer-events: none;
+
+    -webkit-user-drag: none;
+}
+
+/* ================================================
+   8. BOTÕES INTERATIVOS
+================================================ */
+
+.totem-publico-viewport
+#canvasTotem .card-botao-totem {
+    position: absolute;
+
+    z-index: 10;
+
+    cursor: pointer;
+
+    touch-action: manipulation;
+
+    user-select: none;
+
+    /* Mantém a cor salva no editor */
+}
+
+/* Feedback visual ao tocar */
+.totem-publico-viewport
+#canvasTotem .card-botao-totem:active {
+    filter: brightness(0.95);
+}
+
+/* Feedback para navegação por teclado */
+.totem-publico-viewport
+#canvasTotem .card-botao-totem:focus-visible {
+    outline: 3px solid #007bff;
+    outline-offset: 3px;
+}
+
+/* Ícones dos botões */
+.totem-publico-viewport
+#canvasTotem .icon-circle {
+    pointer-events: none;
+}
+
+.totem-publico-viewport
+#canvasTotem .icon-circle img {
+    pointer-events: none;
+
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* ================================================
+   9. BLOCOS DE TEXTO
+================================================ */
+
+.totem-publico-viewport
+#canvasTotem .bloco-texto-livre {
+    position: absolute;
+
+    z-index: 10;
+
+    box-sizing: border-box;
+}
+
+/* Preserva a formatação salva no Summernote */
+.totem-publico-viewport
+#canvasTotem .texto-editavel {
+    width: 100%;
+    height: 100%;
+
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+/* Imagens dentro do texto */
+.totem-publico-viewport
+#canvasTotem .texto-editavel img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ================================================
+   10. OCULTAR CONTROLES ADMINISTRATIVOS
+
+   Esses elementos pertencem somente ao editor.
+================================================ */
+
+.totem-publico-viewport .floating-controls,
+.totem-publico-viewport .floating-controls-left,
+.totem-publico-viewport .resize-handle,
+.totem-publico-viewport .btn-delete-element,
+.totem-publico-viewport .btn-trocar-img,
+.totem-publico-viewport .btn-config-btn,
+.totem-publico-viewport .btn-bg-texto {
+    display: none !important;
+}
+
+/* ================================================
+   11. ZONAS DE NAVEGAÇÃO POR TOQUE
+================================================ */
+
+.touch-zone-left,
+.touch-zone-right {
+    position: fixed;
+
+    top: 0;
+
+    width: 7vw;
+
+    height: 100vh;
+    height: 100dvh;
+
+    z-index: 9999;
+
+    cursor: pointer;
+
+    touch-action: manipulation;
+
+    transition: background-color 0.2s ease;
+}
+
+/* Navegação para página anterior */
+.touch-zone-left {
+    left: 0;
+}
+
+/* Navegação para próxima página */
+.touch-zone-right {
+    right: 0;
+}
+
+/* Feedback ao tocar na lateral esquerda */
+.touch-zone-left:active {
+    background: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.08),
+        transparent
+    );
+}
+
+/* Feedback ao tocar na lateral direita */
+.touch-zone-right:active {
+    background: linear-gradient(
+        to left,
+        rgba(0, 0, 0, 0.08),
+        transparent
+    );
+}
+
+/* Acessibilidade: teclado */
+.touch-zone-left:focus-visible,
+.touch-zone-right:focus-visible {
+    outline: 3px solid #007bff;
+    outline-offset: -3px;
+}
+
+/* ================================================
+   12. DISPOSITIVOS COM TELA TOUCH
+================================================ */
+
+@media (pointer: coarse) {
+
+    .totem-publico-viewport
+    #canvasTotem .card-botao-totem {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .touch-zone-left,
+    .touch-zone-right {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ================================================
+   13. ORIENTAÇÃO DA TELA
+
+   Mantém o canvas centralizado tanto
+   em monitores horizontais quanto verticais.
+================================================ */
+
+@media (orientation: portrait) {
+
+    .totem-publico-viewport {
+        width: 100vw;
+        height: 100dvh;
+    }
+}
+
+@media (orientation: landscape) {
+
+    .totem-publico-viewport {
+        width: 100vw;
+        height: 100dvh;
+    }
+}

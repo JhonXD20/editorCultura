@@ -14,7 +14,9 @@ class Pagina extends Model
     protected $fillable = [
         'pagina_titulo',
         'pagina_tipo_layout',
-        'pagina_ativo'
+        'pagina_ativo',
+        'grupo_slide',
+        'ordem_slide',
     ];
 
     // Relacionamento 1:N (Uma página possui vários conteúdos)
