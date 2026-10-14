@@ -1,58 +1,87 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Editor Cultura
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema de gestão e publicação de conteúdo para totens culturais. A aplicação
+inclui editor visual, cadastro e monitoramento de equipamentos, exibição pública,
+registro de interações, dashboard e relatórios.
 
-## About Laravel
+## Requisitos
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.3 ou superior, com extensões MySQL, DOM e Fileinfo
+- Composer 2
+- Node.js e npm
+- MySQL 8 ou MariaDB compatível
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Para executar os testes também é necessário habilitar `pdo_sqlite` e `sqlite3`.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Instalação
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+copy .env.example .env
+php artisan key:generate
+npm install
+php artisan migrate
+npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Configure as credenciais do MySQL no `.env` antes de executar as migrações.
 
-## Contributing
+O sistema não possui cadastro público. Crie o primeiro usuário por um seeder,
+por um comando administrativo controlado ou com o Tinker no ambiente local.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Desenvolvimento
 
-## Code of Conduct
+```bash
+composer run dev
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+O comando inicia o servidor Laravel, worker de fila, visualização de logs e Vite.
 
-## Security Vulnerabilities
+## Testes
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan test
+```
 
-## License
+No Laragon, caso as extensões SQLite estejam instaladas mas desabilitadas no
+`php.ini`, a suíte pode ser executada sem alterar a configuração global:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php -d extension=pdo_sqlite -d extension=sqlite3 vendor/bin/phpunit
+```
+
+## Operação dos totens
+
+Cada navegador de totem deve ser inicializado por uma URL assinada da rota
+`totem.iniciar`. Essa URL associa a sessão ao equipamento, habilita o heartbeat
+de monitoramento e vincula as interações ao totem correto.
+
+As páginas públicas ficam em `totem/exibir/{id}`. Páginas marcadas como inativas
+não são exibidas.
+
+## Editor visual
+
+O editor de páginas usa GrapesJS `0.23.6` e mantém dois estados separados:
+
+- **rascunho**, salvo automaticamente e também pelo botão **Salvar rascunho**;
+- **publicado**, atualizado somente após a confirmação no botão **Publicar**.
+
+O documento editável é armazenado como JSON. Na publicação, o servidor valida o
+projeto e sanitiza o HTML e o CSS antes de disponibilizá-los no totem. Scripts,
+iframes, formulários, eventos JavaScript e recursos CSS externos não são aceitos.
+Imagens são limitadas a JPG, PNG, WebP ou GIF com até 10 MB.
+
+Páginas que ainda não foram publicadas pelo novo editor continuam exibindo o
+conteúdo legado, evitando uma troca acidental durante a migração.
+
+## Produção
+
+Antes de publicar:
+
+- use `APP_ENV=production` e `APP_DEBUG=false`;
+- configure `APP_URL`, banco, e-mail e HTTPS;
+- execute `php artisan optimize`;
+- execute `npm run build`;
+- não execute seeders de demonstração;
+- mantenha escrita restrita às pastas `storage`, `bootstrap/cache` e ao diretório
+  de uploads utilizado pelo editor.

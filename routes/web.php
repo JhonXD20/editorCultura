@@ -1,35 +1,233 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\PaginaController;
-use App\Http\Controllers\TotemController;
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ConteudoController;
+// Controllers
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InteracaoTotemController;
+use App\Http\Controllers\PaginaController;
+use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\TotemController;
 use App\Http\Controllers\TotemPublicController;
+use App\Http\Controllers\VisualEditorController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
-Auth::routes();
+/*
+|--------------------------------------------------------------------------
+| ROTAS DE AUTENTICAÇÃO
+|--------------------------------------------------------------------------
+|
+| Login, logout, recuperação de senha e demais rotas
+| disponibilizadas pelo Laravel Auth.
+|
+*/
 
-Route::get('/admin', function () {
-    return view('admin');
-})->middleware('auth')->name('admin');
-//Rotas de Conteudos
-Route::resource('gestao-conteudo', PaginaController::class)->parameters([
-    'gestao-conteudo' => 'gestao_conteudo'
-])->middleware('auth');
-Route::post('/gestao-conteudo/salvar', [ConteudoController::class, 'store'])->name('conteudos.store');
-Route::post('/gestao-conteudo/salvar-massa', [ConteudoController::class, 'salvarEmMassa'])->name('conteudos.salvar-em-massa');
-Route::post('/gestao-conteudo/upload-imagem', [ConteudoController::class, 'uploadImagem'])->name('conteudos.upload-imagem');;
-// Rota para a ação de publicar conteúdo
-Route::post('/gestao-conteudo/publicar', [ConteudoController::class, 'publicar'])->name('conteudos.publicar');
+// O sistema e administrativo: novas contas devem ser provisionadas
+// de forma controlada, nunca por cadastro publico.
+Auth::routes(['register' => false]);
 
-Route::resource('totens', TotemController::class)->middleware('auth');
+/*
+|--------------------------------------------------------------------------
+| ROTAS PÚBLICAS
+|--------------------------------------------------------------------------
+|
+| Páginas que não exigem autenticação.
+|
+*/
 
-Route::get('/relatorios', function () {
-    return view('relatorios');
-})->middleware('auth')->name('relatorios');
+// Entrada da aplicacao.
+Route::get('/', function () {
+    return redirect()->route(
+        Auth::check() ? 'admin' : 'login'
+    );
+})->name('inicio');
 
-Route::get('/home', [HomeController::class, 'index'])->name('home');
+// Compatibilidade com o redirecionamento padrao do Laravel UI.
+Route::get('/home', [
+    HomeController::class,
+    'index',
+])->name('home');
 
-// Rota de Exibição Pública do Totem
-Route::get('/totem/exibir/{id}', [TotemPublicController::class, 'exibir'])->name('totem.exibir');
+// Exibição pública do conteúdo nos totens
+Route::get('/totem/exibir/{id}', [
+    TotemPublicController::class,
+    'exibir',
+])->whereNumber('id')
+    ->name('totem.exibir');
+
+// Registra as interações da exibição pública.
+Route::post('/totem/interacoes', [
+    InteracaoTotemController::class,
+    'store',
+])
+    ->middleware('throttle:300,1')
+    ->name('totem.interacoes.store');
+
+// Mantem o status do equipamento associado a sessao atualizado.
+Route::post('/totem/ping', [
+    InteracaoTotemController::class,
+    'ping',
+])
+    ->middleware('throttle:10,1')
+    ->name('totem.ping');
+
+// Associa um navegador de totem a um equipamento.
+// A URL precisa ter uma assinatura válida do Laravel.
+Route::get('/totem/iniciar/{totem}/{pagina}', [
+    TotemPublicController::class,
+    'iniciar',
+])
+    ->middleware('signed')
+    ->name('totem.iniciar');
+
+/*
+|--------------------------------------------------------------------------
+| ROTAS ADMINISTRATIVAS
+|--------------------------------------------------------------------------
+|
+| Todas as rotas deste grupo exigem autenticação.
+|
+*/
+
+Route::middleware(['auth'])->group(function () {
+
+    /*
+|--------------------------------------------------------------------------
+| DASHBOARD ADMINISTRATIVO
+|--------------------------------------------------------------------------
+*/
+
+    Route::get('/admin', [
+        AdminController::class,
+        'index',
+    ])->name('admin');
+
+    /*
+    |--------------------------------------------------------------------------
+    | GERENCIAMENTO DE CONTEÚDOS
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('gestao-conteudo')->group(function () {
+
+        Route::post('/editor/upload', [
+            VisualEditorController::class,
+            'upload',
+        ])->name('editor-visual.upload');
+
+        Route::put('/{pagina}/editor', [
+            VisualEditorController::class,
+            'save',
+        ])->whereNumber('pagina')
+            ->name('editor-visual.save');
+
+        Route::post('/{pagina}/publicar-editor', [
+            VisualEditorController::class,
+            'publish',
+        ])->whereNumber('pagina')
+            ->name('editor-visual.publish');
+
+        // Salvar conteúdo individual
+        Route::post('/salvar', [
+            ConteudoController::class,
+            'store',
+        ])->name('conteudos.store');
+
+        // Salvar múltiplos blocos do editor
+        Route::post('/salvar-massa', [
+            ConteudoController::class,
+            'salvarEmMassa',
+        ])->name('conteudos.salvar-em-massa');
+
+        // Upload de imagens
+        Route::post('/upload-imagem', [
+            ConteudoController::class,
+            'uploadImagem',
+        ])->name('conteudos.upload-imagem');
+
+        // Publicar conteúdo
+        Route::post('/publicar', [
+            ConteudoController::class,
+            'publicar',
+        ])->name('conteudos.publicar');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | GERENCIAMENTO DE PÁGINAS
+    |--------------------------------------------------------------------------
+    |
+    | Expõe somente as operações implementadas pelo controlador.
+    */
+
+    Route::resource(
+        'gestao-conteudo',
+        PaginaController::class
+    )->only([
+        'index',
+        'store',
+        'edit',
+        'update',
+        'destroy',
+    ])->parameters([
+        'gestao-conteudo' => 'gestao_conteudo',
+    ]);
+
+    /*
+|--------------------------------------------------------------------------
+| MONITORAMENTO E CADASTRO DE TOTENS
+|--------------------------------------------------------------------------
+*/
+
+    Route::prefix('totens')
+        ->name('admin.totens.')
+        ->group(function () {
+
+            // Listar totens
+            Route::get('/', [
+                TotemController::class,
+                'index',
+            ])->name('index');
+
+            // Cadastrar
+            Route::post('/', [
+                TotemController::class,
+                'store',
+            ])->name('store');
+
+            // Buscar os dados atuais do totem (JSON)
+            Route::get('/{totem}', [
+                TotemController::class,
+                'show',
+            ])->whereNumber('totem')
+                ->name('show');
+
+            // Atualizar
+            Route::put('/{totem}', [
+                TotemController::class,
+                'update',
+            ])->whereNumber('totem')
+                ->name('update');
+
+            // Excluir
+            Route::delete('/{totem}', [
+                TotemController::class,
+                'destroy',
+            ])->whereNumber('totem')
+                ->name('destroy');
+        });
+
+    /*
+|--------------------------------------------------------------------------
+| RELATÓRIOS DE USO
+|--------------------------------------------------------------------------
+*/
+
+    Route::get('/relatorios', [
+        RelatorioController::class,
+        'index',
+    ])
+        ->middleware('auth')
+        ->name('relatorios');
+});

@@ -1,0 +1,742 @@
+
+/* =========================================
+   MONITORAMENTO DE TOTENS
+   resources/css/totens.css
+========================================= */
+
+/* CORES PADRÃO */
+.totens-page {
+    --totens-gold: var(--color-gold, #cba258);
+    --totens-border: var(--border-color, #dee2e6);
+    --totens-text: var(--color-text-main, #1f2937);
+    --totens-muted: var(--color-text-muted, #64748b);
+}
+
+/* =========================================
+   BARRA DE FILTROS E AÇÕES
+========================================= */
+
+.totens-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    margin-bottom: 24px;
+}
+
+.filters-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.filter-btn {
+    background: transparent;
+    border: 1px solid var(--totens-border);
+
+    color: var(--totens-muted);
+
+    border-radius: 20px;
+    padding: 7px 16px;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    border-color: var(--totens-gold);
+    color: var(--totens-gold);
+}
+
+.filter-btn:focus-visible {
+    outline: 2px solid var(--totens-gold);
+    outline-offset: 2px;
+}
+
+/* BOTÕES DO CABEÇALHO */
+
+.totens-toolbar-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-cadastrar-totem,
+.btn-atualizar-lista {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    border-radius: 6px;
+    padding: 9px 16px;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cadastrar-totem {
+    background-color: var(--totens-gold);
+    border: 1px solid var(--totens-gold);
+    color: #171717;
+}
+
+.btn-cadastrar-totem:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.btn-atualizar-lista {
+    background: transparent;
+    border: 1px solid var(--totens-border);
+    color: var(--totens-muted);
+}
+
+.btn-atualizar-lista:hover {
+    border-color: var(--totens-gold);
+    color: var(--totens-gold);
+}
+
+/* =========================================
+   MENSAGENS
+========================================= */
+
+.totens-alerta-sucesso {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 12px 16px;
+    margin-bottom: 20px;
+
+    border: 1px solid rgba(46, 160, 67, 0.3);
+    border-radius: 8px;
+
+    background: rgba(46, 160, 67, 0.1);
+    color: #16a34a;
+
+    font-size: 0.9rem;
+}
+
+.totens-alerta-sucesso i {
+    margin-right: 6px;
+}
+
+.totens-alerta-sucesso button {
+    background: transparent;
+    border: none;
+    color: inherit;
+
+    font-size: 22px;
+    cursor: pointer;
+}
+
+/* =========================================
+   TABELA DE TOTENS
+========================================= */
+
+.totens-card {
+    overflow: hidden;
+    padding: 0;
+}
+
+.custom-table {
+    width: 100%;
+    color: var(--totens-text);
+    margin-bottom: 0;
+}
+
+.custom-table th,
+.custom-table td {
+    padding: 16px 20px;
+
+    border-top: none;
+    border-bottom: 1px solid var(--totens-border);
+
+    background-color: transparent !important;
+    vertical-align: middle;
+}
+
+.custom-table thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: 1px;
+
+    color: var(--totens-muted);
+
+    border-bottom: 1px solid var(--totens-border);
+}
+
+.custom-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+.custom-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.custom-table tbody tr[hidden] {
+    display: none !important;
+}
+
+/* ID */
+
+.totem-id {
+    color: var(--totens-gold);
+    font-weight: 600;
+}
+
+/* DISPOSITIVO */
+
+.dispositivo-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dispositivo-nome {
+    color: var(--totens-text);
+    font-weight: 600;
+    font-size: 0.94rem;
+}
+
+.dispositivo-localizacao {
+    color: var(--totens-muted);
+    font-size: 0.83rem;
+}
+
+.dispositivo-localizacao i {
+    margin-right: 5px;
+    font-size: 0.75rem;
+}
+
+/* =========================================
+   BADGES DE STATUS
+========================================= */
+
+.custom-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 5px 11px;
+    border-radius: 14px;
+
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+.status-dot {
+    display: inline-block;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.badge-online {
+    background: rgba(46, 160, 67, 0.15);
+    color: #16a34a;
+}
+
+.badge-offline {
+    background: rgba(139, 148, 158, 0.15);
+    color: #64748b;
+}
+
+/* =========================================
+   ÚLTIMO CONTATO
+========================================= */
+
+.ultimo-contato {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contato-online {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.contato-offline {
+    color: var(--totens-muted);
+}
+
+.data-contato {
+    color: var(--totens-muted);
+    font-size: 0.75rem;
+}
+
+/* =========================================
+   BOTÕES DE AÇÃO
+========================================= */
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+
+    border: 1px solid var(--totens-border);
+    border-radius: 5px;
+
+    background: transparent;
+    color: var(--totens-muted);
+
+    font-size: 0.85rem;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+    border-color: var(--totens-gold);
+    color: var(--totens-gold);
+
+    background: rgba(203, 162, 88, 0.05);
+}
+
+/* =========================================
+   SEM RESULTADOS
+========================================= */
+
+.sem-totens,
+.sem-resultados-filtro {
+    text-align: center;
+    padding: 36px 20px;
+
+    color: var(--totens-muted);
+}
+
+.sem-totens i,
+.sem-resultados-filtro i {
+    font-size: 28px;
+    margin-bottom: 14px;
+}
+
+.sem-totens h5 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.sem-totens p,
+.sem-resultados-filtro p {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.sem-resultados-filtro[hidden] {
+    display: none !important;
+}
+
+/* RODAPÉ */
+
+.totens-rodape {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+
+    gap: 10px;
+    margin-top: 16px;
+
+    color: var(--totens-muted);
+}
+
+.totens-rodape small {
+    font-size: 0.8rem;
+}
+
+.totens-rodape i {
+    margin-right: 5px;
+}
+
+/* =========================================
+   MODAIS
+========================================= */
+
+.totens-dialog {
+    width: min(94vw, 520px);
+    max-width: 520px;
+    max-height: 90vh;
+
+    margin: auto;
+    padding: 0;
+
+    border: none;
+    border-radius: 12px;
+
+    background: #ffffff;
+    color: #1f2937;
+
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.22);
+
+    overflow: auto;
+}
+
+.totens-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.48);
+}
+
+.totens-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+
+    padding: 18px 22px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.totens-dialog-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    margin: 0;
+
+    font-size: 1.1rem;
+    font-weight: 600;
+
+    color: #1f2937;
+}
+
+.totens-dialog-header h4 i {
+    color: #cba258;
+}
+
+.totens-dialog-close {
+    border: none;
+    background: transparent;
+    color: #64748b;
+
+    font-size: 26px;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.totens-dialog-close:hover {
+    color: #dc2626;
+}
+
+.totens-dialog-body {
+    padding: 22px;
+}
+
+.totens-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+    padding: 16px 22px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* =========================================
+   DETALHES
+========================================= */
+
+.detalhe-campo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+
+    font-size: 0.9rem;
+}
+
+.detalhe-campo:last-child {
+    border-bottom: none;
+}
+
+.detalhe-campo strong {
+    flex-shrink: 0;
+}
+
+.detalhe-campo span {
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.btn-fechar-modal {
+    padding: 9px 20px;
+
+    border: none;
+    border-radius: 6px;
+
+    background: #334155;
+    color: #ffffff;
+
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-fechar-modal:hover {
+    background: #1e293b;
+}
+
+/* =========================================
+   FORMULÁRIO DE CADASTRO
+========================================= */
+
+.cadastro-dialog {
+    width: min(94vw, 540px);
+    max-width: 540px;
+}
+
+.cadastro-descricao {
+    margin-bottom: 24px;
+    color: #64748b;
+
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.totens-form-group {
+    margin-bottom: 20px;
+}
+
+.totens-form-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #334155;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.campo-obrigatorio {
+    color: #dc2626;
+}
+
+.totens-form-control {
+    display: block;
+    width: 100%;
+
+    padding: 11px 12px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+
+    background: #ffffff;
+    color: #1e293b;
+
+    font-size: 0.95rem;
+
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.totens-form-control:focus {
+    border-color: #cba258;
+    outline: none;
+
+    box-shadow: 0 0 0 3px rgba(203, 162, 88, 0.15);
+}
+
+.totens-form-control.is-invalid {
+    border-color: #dc2626;
+}
+
+.totens-erro-campo {
+    display: block;
+    margin-top: 6px;
+
+    color: #dc2626;
+    font-size: 0.82rem;
+}
+
+/* AVISO */
+
+.totens-aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    padding: 13px 14px;
+
+    border: 1px solid #bfdbfe;
+    border-radius: 7px;
+
+    background: #eff6ff;
+    color: #1d4ed8;
+
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.totens-aviso i {
+    margin-top: 3px;
+}
+
+/* BOTÕES DO FORMULÁRIO */
+
+.btn-cancelar-cadastro,
+.btn-salvar-cadastro {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 10px 18px;
+
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-cancelar-cadastro {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+}
+
+.btn-cancelar-cadastro:hover {
+    background: #f1f5f9;
+}
+
+.btn-salvar-cadastro {
+    border: 1px solid #cba258;
+    background: #cba258;
+    color: #171717;
+}
+
+.btn-salvar-cadastro:hover {
+    background: #d9b470;
+}
+
+.btn-salvar-cadastro:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+/* =========================================
+   RESPONSIVIDADE
+========================================= */
+
+@media (max-width: 768px) {
+
+    .totens-toolbar {
+        align-items: stretch;
+    }
+
+    .filters-container,
+    .totens-toolbar-acoes {
+        width: 100%;
+    }
+
+    .totens-toolbar-acoes button {
+        flex: 1;
+    }
+
+    .custom-table th,
+    .custom-table td {
+        padding: 12px;
+    }
+
+    .totens-dialog-header,
+    .totens-dialog-body,
+    .totens-dialog-footer {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .detalhe-campo {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .filter-btn {
+        padding: 7px 12px;
+        font-size: 0.8rem;
+    }
+
+    .totens-toolbar-acoes {
+        flex-direction: column;
+    }
+
+    .totens-toolbar-acoes button {
+        width: 100%;
+    }
+}
+
+/* =========================================
+   MODAL COMPARTILHADO:
+   CADASTRAR / EDITAR
+========================================= */
+
+/* Garante que os elementos ocultos
+   permaneçam invisíveis */
+.totens-dialog [hidden] {
+    display: none !important;
+}
+
+/* Mensagem de erro ao buscar o totem */
+.totens-erro-requisicao {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 7px;
+
+    background: rgba(239, 68, 68, 0.08);
+    color: #b91c1c;
+
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* Identificação visual dos botões */
+.acoes-totem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+.btn-editar-totem:hover {
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.btn-reiniciar-totem:hover {
+    color: #cba258;
+    border-color: #cba258;
+}
+
+.btn-excluir-totem:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+

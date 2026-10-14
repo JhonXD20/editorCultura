@@ -2,206 +2,382 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Models\Pagina;
 use App\Models\Conteudo;
+use App\Models\Pagina;
+use App\Support\HtmlSanitizer;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ConteudoController extends Controller
 {
-    // Cria tanto botões na Home quanto Textos e Imagens nas Subpáginas
-    public function store(Request $request)
+    private const COMPONENT_TYPES = [
+        'botao_navegacao',
+        'botao',
+        'texto',
+        'titulo_pagina',
+        'imagem',
+        'logo',
+        'fundo',
+    ];
+
+    public function store(Request $request): RedirectResponse
     {
-        $totalItens = DB::table('conteudos')->where('pagina_id', $request->pagina_id)->count();
-        $tipo = $request->input('tipo_componente', 'botao_navegacao');
+        $validated = $request->validate([
+            'pagina_id' => ['required', 'integer', 'exists:paginas,id'],
+            'tipo_componente' => ['nullable', Rule::in(self::COMPONENT_TYPES)],
+            'titulo' => ['nullable', 'string', 'max:500'],
+            'texto' => ['nullable', 'string', 'max:50000'],
+            'icone' => ['nullable', 'string', 'max:2048'],
+            'pagina_destino_id' => [
+                'nullable',
+                function (string $attribute, mixed $value, $fail): void {
+                    if ($value === 'nova') {
+                        return;
+                    }
 
-        $destinoId = $request->pagina_destino_id;
+                    if (! ctype_digit((string) $value) || ! Pagina::whereKey($value)->exists()) {
+                        $fail('A pagina de destino selecionada e invalida.');
+                    }
+                },
+            ],
+            'nova_pagina_titulo' => [
+                'nullable',
+                'required_if:pagina_destino_id,nova',
+                'string',
+                'max:100',
+            ],
+            'grupo_slide' => ['nullable', 'string', 'max:100'],
+        ]);
 
-        // SE O USUÁRIO ESCOLHEU "CRIAR NOVA PÁGINA"
-        if ($destinoId === 'nova') {
-            $grupoSlide = $request->input('grupo_slide');
-            $ordemSlide = 0;
+        $tipo = $validated['tipo_componente'] ?? 'botao_navegacao';
 
-            // Inteligência dos Slides: Calcula automaticamente qual é o número deste slide no grupo
-            if (!empty($grupoSlide)) {
-                $maxOrdem = DB::table('paginas')
-                    ->where('grupo_slide', $grupoSlide)
-                    ->max('ordem_slide');
-                $ordemSlide = $maxOrdem ? $maxOrdem + 1 : 1;
+        if (in_array($tipo, ['botao', 'botao_navegacao'], true)) {
+            validator($validated, [
+                'titulo' => ['required', 'string', 'max:500'],
+                'pagina_destino_id' => ['required'],
+            ])->validate();
+        }
+
+        DB::transaction(function () use ($validated, $tipo): void {
+            $pagina = Pagina::query()
+                ->lockForUpdate()
+                ->findOrFail($validated['pagina_id']);
+
+            $destinoId = $validated['pagina_destino_id'] ?? null;
+
+            if ($destinoId === 'nova') {
+                $grupo = $validated['grupo_slide'] ?? null;
+                $ordem = 0;
+
+                if ($grupo) {
+                    $ordem = (int) Pagina::query()
+                        ->where('grupo_slide', $grupo)
+                        ->lockForUpdate()
+                        ->max('ordem_slide') + 1;
+                }
+
+                $destinoId = Pagina::create([
+                    'pagina_titulo' => $validated['nova_pagina_titulo'],
+                    'pagina_tipo_layout' => 'interna',
+                    'grupo_slide' => $grupo,
+                    'ordem_slide' => $ordem,
+                ])->id;
             }
 
-            // Cria a página no banco de dados e pega o ID dela gerado na hora
-            $destinoId = DB::table('paginas')->insertGetId([
-                'pagina_titulo'      => $request->input('nova_pagina_titulo'),
-                'pagina_tipo_layout' => 'interna',
-                'grupo_slide'        => $grupoSlide, // Guarda o grupo digitado (Ex: História)
-                'ordem_slide'        => $ordemSlide, // Guarda a ordem calculada (Ex: 1, 2, 3...)
-                'created_at'         => now(),
-                'updated_at'         => now(),
+            $dados = match ($tipo) {
+                'texto', 'titulo_pagina' => [
+                    'texto' => HtmlSanitizer::clean(
+                        $validated['texto'] ?? 'Novo bloco de texto. Clique no lapis para editar.'
+                    ),
+                    'pos_x' => 10,
+                    'pos_y' => 25,
+                    'largura' => 350,
+                    'altura' => 100,
+                ],
+                'imagem', 'logo' => [
+                    'icone' => $validated['icone'] ?? 'totem/img/logo-vertical-longa.png',
+                    'pos_x' => 30,
+                    'pos_y' => 35,
+                    'largura' => 300,
+                    'altura' => 300,
+                ],
+                default => [
+                    'titulo' => HtmlSanitizer::clean($validated['titulo'] ?? ''),
+                    'icone' => $validated['icone'] ?? 'totem/img/botoes/BTN_Historia.png',
+                    'pagina_destino_id' => (int) $destinoId,
+                    'pos_x' => 45,
+                    'pos_y' => 30,
+                    'largura' => 175,
+                    'altura' => 150,
+                ],
+            };
+
+            $ordem = (int) $pagina->conteudos()
+                ->lockForUpdate()
+                ->max('conteudo_ordem_exibicao') + 1;
+
+            $pagina->conteudos()->create([
+                'conteudo_tipo_componente' => $tipo,
+                'conteudo_ordem_exibicao' => $ordem,
+                'conteudo_dados_conteudo' => $dados,
             ]);
-        }
-
-        // Prepara os dados de acordo com o tipo
-        if ($tipo === 'texto') {
-            $dados = [
-                'texto' => $request->input('texto', 'Novo bloco de texto. Clique no lápis para editar.'),
-                'pos_x' => 10,
-                'pos_y' => 25,
-                'largura' => 80
-            ];
-        } elseif ($tipo === 'imagem') {
-            $dados = [
-                'url' => $request->input('icone', 'totem/img/logo-vertical-longa.png'),
-                'pos_x' => 30,
-                'pos_y' => 35,
-                'largura' => 300,
-                'altura' => 300
-            ];
-        } else {
-            $dados = [
-                'titulo' => $request->titulo,
-                'icone' => $request->icone ?: 'totem/img/botoes/BTN_Historia.png',
-                'pagina_destino_id' => $destinoId, // Usa o ID existente ou o ID que acabou de ser criado!
-                'pos_x' => 45,
-                'pos_y' => 30,
-                'largura' => 175,
-                'altura' => 150
-            ];
-        }
-
-        // Cria o botão ou conteúdo na tela atual
-        DB::table('conteudos')->insert([
-            'pagina_id' => $request->pagina_id,
-            'conteudo_tipo_componente' => $tipo,
-            'conteudo_ordem_exibicao' => $totalItens + 1,
-            'conteudo_dados_conteudo' => json_encode($dados),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        });
 
         return redirect()->back()->with('success', 'Elemento adicionado com sucesso!');
     }
 
-    public function uploadImagem(Request $request)
+    public function uploadImagem(Request $request): JsonResponse
     {
-        if ($request->hasFile('imagem')) {
-            $arquivo = $request->file('imagem');
-            $nomeArquivo = time() . '_' . preg_replace('/\s+/', '_', $arquivo->getClientOriginalName());
+        $validated = $request->validate([
+            'imagem' => [
+                'required',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,webp,gif',
+                'max:10240',
+            ],
+        ]);
 
-            $pastaDestino = public_path('totem/img/uploads');
-            if (!file_exists($pastaDestino)) {
-                mkdir($pastaDestino, 0755, true);
-            }
+        $arquivo = $validated['imagem'];
+        $nomeArquivo = Str::uuid().'.'.strtolower($arquivo->extension());
+        $pastaDestino = public_path('totem/img/uploads');
 
-            $arquivo->move($pastaDestino, $nomeArquivo);
-            $caminhoRelativo = 'totem/img/uploads/' . $nomeArquivo;
+        if (! is_dir($pastaDestino) && ! mkdir($pastaDestino, 0755, true) && ! is_dir($pastaDestino)) {
+            Log::error('Nao foi possivel criar a pasta de uploads do editor.');
 
             return response()->json([
-                'success' => true,
-                'caminho_relativo' => $caminhoRelativo,
-                'url_completa' => asset($caminhoRelativo)
+                'success' => false,
+                'message' => 'Nao foi possivel armazenar a imagem.',
+            ], 500);
+        }
+
+        $arquivo->move($pastaDestino, $nomeArquivo);
+        $caminhoRelativo = 'totem/img/uploads/'.$nomeArquivo;
+
+        return response()->json([
+            'success' => true,
+            'caminho_relativo' => $caminhoRelativo,
+            'url_completa' => asset($caminhoRelativo),
+        ]);
+    }
+
+    public function salvarEmMassa(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'pagina_id' => ['required', 'integer', 'exists:paginas,id'],
+            'blocos' => ['present', 'array', 'max:500'],
+            'blocos.*.id' => ['required'],
+            'blocos.*.tipo' => ['required', Rule::in(self::COMPONENT_TYPES)],
+            'blocos.*.ordem' => ['required', 'integer', 'min:0', 'max:10000'],
+            'blocos.*.dados_conteudo' => ['required', 'array'],
+            'blocos.*.dados_conteudo.texto' => ['nullable', 'string', 'max:50000'],
+            'blocos.*.dados_conteudo.titulo' => ['nullable', 'string', 'max:50000'],
+            'blocos.*.dados_conteudo.icone' => ['nullable', 'string', 'max:2048'],
+            'blocos.*.dados_conteudo.valor_fundo' => ['nullable', 'string', 'max:4096'],
+            'blocos.*.dados_conteudo.tipo_fundo' => ['nullable', Rule::in(['css', 'imagem'])],
+            'blocos.*.dados_conteudo.pagina_destino_id' => ['nullable', 'integer'],
+            'blocos.*.dados_conteudo.pos_x' => ['nullable', 'numeric', 'between:-1000,1000'],
+            'blocos.*.dados_conteudo.pos_y' => ['nullable', 'numeric', 'between:-1000,1000'],
+            'blocos.*.dados_conteudo.largura' => ['nullable', 'numeric', 'between:1,10000'],
+            'blocos.*.dados_conteudo.altura' => ['nullable', 'numeric', 'between:0,10000'],
+            'blocos.*.dados_conteudo.largura_canvas' => ['nullable', 'numeric', 'between:320,10000'],
+            'blocos.*.dados_conteudo.altura_canvas' => ['nullable', 'numeric', 'between:240,10000'],
+            'blocos.*.dados_conteudo.tamanho_icone' => ['nullable'],
+            'blocos.*.dados_conteudo.formato_icone' => ['nullable', 'string', 'max:30'],
+            'blocos.*.dados_conteudo.cor_fundo' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $destinos = collect($validated['blocos'])
+            ->pluck('dados_conteudo.pagina_destino_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($destinos->isNotEmpty() && Pagina::whereKey($destinos)->count() !== $destinos->count()) {
+            throw ValidationException::withMessages([
+                'blocos' => 'Um dos botoes aponta para uma pagina inexistente.',
             ]);
         }
 
-        return response()->json(['success' => false, 'message' => 'Nenhum arquivo enviado.'], 400);
-    }
-
-    // Salva coordenadas X/Y de qualquer página (Home ou Subpáginas)
-    public function salvarEmMassa(Request $request)
-    {
         try {
-            $paginaId = $request->pagina_id;
-            $blocos = $request->blocos;
+            DB::transaction(function () use ($validated): void {
+                $paginaId = (int) $validated['pagina_id'];
+                Pagina::query()->lockForUpdate()->findOrFail($paginaId);
 
-            // Array para guardar os IDs que permanecem no ecrã (para podermos apagar os restantes depois)
-            $idsParaManter = [];
+                $idsParaManter = [];
+                $idsRecebidos = [];
 
-            foreach ($blocos as $bloco) {
-                $id = $bloco['id'];
-                $tipo = $bloco['tipo'];
-                $dados = json_encode($bloco['dados_conteudo']);
-                $ordem = $bloco['ordem'];
+                foreach ($validated['blocos'] as $bloco) {
+                    $id = $bloco['id'];
+                    $tipo = $bloco['tipo'];
+                    $dados = $this->normalizarDados($tipo, $bloco['dados_conteudo']);
+                    $ordem = (int) $bloco['ordem'];
 
-                // 1. Elementos fixos da página (Logo, Título e Fundo)
-                if (in_array($id, ['novo_logo', 'novo_titulo', 'novo_fundo']) || in_array($tipo, ['logo', 'titulo_pagina', 'fundo'])) {
-                    $existente = DB::table('conteudos')
-                        ->where('pagina_id', $paginaId)
-                        ->where('conteudo_tipo_componente', $tipo)
-                        ->first();
+                    if (in_array((string) $id, ['novo_logo', 'novo_titulo', 'novo_fundo'], true)
+                        || in_array($tipo, ['logo', 'titulo_pagina', 'fundo'], true)) {
+                        $conteudo = Conteudo::query()
+                            ->where('pagina_id', $paginaId)
+                            ->where('conteudo_tipo_componente', $tipo)
+                            ->lockForUpdate()
+                            ->first();
 
-                    if ($existente) {
-                        DB::table('conteudos')->where('id', $existente->id)->update([
-                            'conteudo_dados_conteudo' => $dados,
-                            'conteudo_ordem_exibicao' => $ordem,
-                            'updated_at' => now(),
-                        ]);
-                        $idsParaManter[] = $existente->id;
-                    } else {
-                        $novoId = DB::table('conteudos')->insertGetId([
+                        if ($conteudo) {
+                            $conteudo->update([
+                                'conteudo_dados_conteudo' => $dados,
+                                'conteudo_ordem_exibicao' => $ordem,
+                            ]);
+                        } else {
+                            $conteudo = Conteudo::create([
+                                'pagina_id' => $paginaId,
+                                'conteudo_tipo_componente' => $tipo,
+                                'conteudo_dados_conteudo' => $dados,
+                                'conteudo_ordem_exibicao' => $ordem,
+                            ]);
+                        }
+
+                        $idsParaManter[] = $conteudo->id;
+
+                        continue;
+                    }
+
+                    if (is_string($id) && str_starts_with($id, 'novo_texto_')) {
+                        $conteudo = Conteudo::create([
                             'pagina_id' => $paginaId,
                             'conteudo_tipo_componente' => $tipo,
                             'conteudo_dados_conteudo' => $dados,
                             'conteudo_ordem_exibicao' => $ordem,
-                            'created_at' => now(),
-                            'updated_at' => now(),
                         ]);
-                        $idsParaManter[] = $novoId;
+
+                        $idsParaManter[] = $conteudo->id;
+
+                        continue;
                     }
-                }
-                // 2. NOVOS blocos de texto criados dinamicamente no JS (Inserção / INSERT)
-                elseif (is_string($id) && strpos($id, 'novo_texto_') === 0) {
-                    $novoId = DB::table('conteudos')->insertGetId([
-                        'pagina_id' => $paginaId,
-                        'conteudo_tipo_componente' => $tipo,
-                        'conteudo_dados_conteudo' => $dados,
-                        'conteudo_ordem_exibicao' => $ordem,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                    $idsParaManter[] = $novoId;
-                }
-                // 3. Atualização de Botões ou Textos que já existiam na base de dados (Têm ID Numérico)
-                else {
-                    DB::table('conteudos')->where('id', $id)->update([
-                        'conteudo_dados_conteudo' => $dados,
-                        'conteudo_ordem_exibicao' => $ordem,
-                        'updated_at' => now(),
-                    ]);
-                    $idsParaManter[] = $id;
-                }
-            }
 
-            // 4. ELIMINAR DA BASE DE DADOS: Apaga todos os elementos desta página que não vieram na requisição (ou seja, os que foram para a Lixeira no ecrã)
-            if (!empty($idsParaManter)) {
-                DB::table('conteudos')
+                    if (! ctype_digit((string) $id) || in_array((int) $id, $idsRecebidos, true)) {
+                        throw ValidationException::withMessages([
+                            'blocos' => 'A lista de componentes contem um identificador invalido ou duplicado.',
+                        ]);
+                    }
+
+                    $idsRecebidos[] = (int) $id;
+
+                    $atualizados = Conteudo::query()
+                        ->whereKey((int) $id)
+                        ->where('pagina_id', $paginaId)
+                        ->update([
+                            'conteudo_tipo_componente' => $tipo,
+                            'conteudo_dados_conteudo' => $dados,
+                            'conteudo_ordem_exibicao' => $ordem,
+                        ]);
+
+                    if ($atualizados !== 1) {
+                        throw ValidationException::withMessages([
+                            'blocos' => 'Um componente nao pertence a pagina editada.',
+                        ]);
+                    }
+
+                    $idsParaManter[] = (int) $id;
+                }
+
+                Conteudo::query()
                     ->where('pagina_id', $paginaId)
-                    ->whereNotIn('id', $idsParaManter)
+                    ->when(
+                        $idsParaManter !== [],
+                        fn ($query) => $query->whereNotIn('id', $idsParaManter)
+                    )
                     ->delete();
-            }
-
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
-        }
-    }
-
-    // Envia o sinal para os totens atualizarem suas telas
-    public function publicar(Request $request)
-    {
-        try {
-            // Atualiza a coluna 'updated_at' de todos os totens cadastrados.
-            // O software do totem pode ler essa data a cada X segundos para saber se deve dar "F5" na tela.
-            DB::table('totens')->update(['updated_at' => now()]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Sincronização enviada! As telas dos totens serão atualizadas em instantes.'
+            });
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            Log::error('Falha ao salvar o canvas do totem.', [
+                'pagina_id' => $validated['pagina_id'],
+                'exception' => $exception,
             ]);
-        } catch (\Exception $e) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao sincronizar com os totens: ' . $e->getMessage()
+                'message' => 'Nao foi possivel salvar os conteudos. Tente novamente.',
             ], 500);
         }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function publicar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'pagina_id' => ['required', 'integer', 'exists:paginas,id'],
+        ]);
+
+        DB::table('totens')->update(['updated_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sincronizacao enviada! As telas dos totens serao atualizadas em instantes.',
+        ]);
+    }
+
+    private function normalizarDados(string $tipo, array $dados): array
+    {
+        $dados = Arr::only($dados, [
+            'texto', 'titulo', 'icone', 'pagina_destino_id', 'pos_x',
+            'pos_y', 'largura', 'altura', 'formato_icone', 'tamanho_icone',
+            'cor_fundo', 'tipo_fundo', 'valor_fundo', 'largura_canvas',
+            'altura_canvas',
+        ]);
+
+        if (array_key_exists('texto', $dados)) {
+            $dados['texto'] = HtmlSanitizer::clean((string) $dados['texto']);
+        }
+
+        if (array_key_exists('titulo', $dados)) {
+            $dados['titulo'] = HtmlSanitizer::clean((string) $dados['titulo']);
+        }
+
+        foreach (['pos_x', 'pos_y', 'largura', 'altura', 'largura_canvas', 'altura_canvas'] as $key) {
+            if (array_key_exists($key, $dados)) {
+                $dados[$key] = (float) $dados[$key];
+            }
+        }
+
+        if (isset($dados['pagina_destino_id'])) {
+            $dados['pagina_destino_id'] = (int) $dados['pagina_destino_id'];
+        }
+
+        if (isset($dados['cor_fundo']) && ! $this->corSegura($dados['cor_fundo'])) {
+            $dados['cor_fundo'] = 'transparent';
+        }
+
+        if (isset($dados['formato_icone'])
+            && ! preg_match('/^\d+(?:\.\d+)?(?:px|%)$/', $dados['formato_icone'])) {
+            $dados['formato_icone'] = '50%';
+        }
+
+        if ($tipo === 'fundo' && ($dados['tipo_fundo'] ?? null) === 'css') {
+            $valor = (string) ($dados['valor_fundo'] ?? '');
+
+            if (preg_match('/(?:url\s*\(|expression|javascript:|@import|behavior)/i', $valor)) {
+                $dados['valor_fundo'] = '#ffffff';
+            }
+        }
+
+        return $dados;
+    }
+
+    private function corSegura(string $color): bool
+    {
+        return preg_match(
+            '/^(?:transparent|#[0-9a-f]{3,8}|rgba?\([0-9.,%\s]+\)|hsla?\([0-9.,%\s]+\))$/i',
+            trim($color)
+        ) === 1;
     }
 }

@@ -8,31 +8,24 @@ use Illuminate\Http\Request;
 class TotemController extends Controller
 {
     /**
-     * Exibe a página de monitoramento.
+     * Lista os totens cadastrados.
      */
     public function index()
     {
-        // Busca todos os equipamentos cadastrados
-        $totens = Totem::orderBy('id', 'asc')->get();
+        $totens = Totem::orderBy('id')->get();
 
-        // Total de dispositivos
-        $totalTotens = $totens->count();
-
-        // Totens online
-        $totalOnline = $totens->filter(function ($totem) {
-            return $totem->status_monitoramento === 'online';
-        })->count();
-
-        // Totens offline
-        $totalOffline = $totens->filter(function ($totem) {
-            return $totem->status_monitoramento === 'offline';
-        })->count();
-
-        // Informações para os filtros
         $resumo = [
-            'todos' => $totalTotens,
-            'online' => $totalOnline,
-            'offline' => $totalOffline,
+            'todos' => $totens->count(),
+
+            'online' => $totens->filter(
+                fn($totem) =>
+                $totem->status_monitoramento === 'online'
+            )->count(),
+
+            'offline' => $totens->filter(
+                fn($totem) =>
+                $totem->status_monitoramento === 'offline'
+            )->count(),
         ];
 
         return view('totens', compact(
@@ -42,23 +35,26 @@ class TotemController extends Controller
     }
 
     /**
-     * Cadastra um novo totem.
+     * Cadastra um totem.
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'totem_nome_identificacao' => [
-                'required',
-                'string',
-                'max:100'
-            ],
+        $validated = $request->validateWithBag(
+            'formTotem',
+            [
+                'totem_nome_identificacao' => [
+                    'required',
+                    'string',
+                    'max:100',
+                ],
 
-            'totem_localizacao' => [
-                'nullable',
-                'string',
-                'max:100'
-            ],
-        ]);
+                'totem_localizacao' => [
+                    'nullable',
+                    'string',
+                    'max:100',
+                ],
+            ]
+        );
 
         Totem::create($validated);
 
@@ -66,7 +62,73 @@ class TotemController extends Controller
             ->route('admin.totens.index')
             ->with(
                 'success',
-                'Totem registrado com sucesso!'
+                'Totem cadastrado com sucesso!'
+            );
+    }
+
+    /**
+     * Busca os dados de um totem no banco.
+     *
+     * O JavaScript utiliza este método
+     * para preencher o modal de edição.
+     */
+    public function show(Totem $totem)
+    {
+        return response()->json([
+            'id' => $totem->id,
+
+            'totem_nome_identificacao' =>
+            $totem->totem_nome_identificacao,
+
+            'totem_localizacao' =>
+            $totem->totem_localizacao,
+        ]);
+    }
+
+    /**
+     * Atualiza um totem existente.
+     */
+    public function update(Request $request, Totem $totem)
+    {
+        $validated = $request->validateWithBag(
+            'formTotem',
+            [
+                'totem_nome_identificacao' => [
+                    'required',
+                    'string',
+                    'max:100',
+                ],
+
+                'totem_localizacao' => [
+                    'nullable',
+                    'string',
+                    'max:100',
+                ],
+            ]
+        );
+
+        $totem->update($validated);
+
+        return redirect()
+            ->route('admin.totens.index')
+            ->with(
+                'success',
+                'Totem atualizado com sucesso!'
+            );
+    }
+
+    /**
+     * Exclui um totem.
+     */
+    public function destroy(Totem $totem)
+    {
+        $totem->delete();
+
+        return redirect()
+            ->route('admin.totens.index')
+            ->with(
+                'success',
+                'Totem excluído com sucesso!'
             );
     }
 }

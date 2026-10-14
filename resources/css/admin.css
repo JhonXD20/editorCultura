@@ -1,0 +1,500 @@
+
+/* ==========================================
+   EDITOR CULTURA - DASHBOARD ADMINISTRATIVO
+========================================== */
+
+.admin-overview {
+    --overview-gold: var(--color-gold, #cba258);
+    --overview-border: var(--border-color, #dee2e6);
+    --overview-text: var(--color-text-main, #1f2937);
+    --overview-muted: var(--color-text-muted, #64748b);
+
+    width: 100%;
+    min-width: 0;
+}
+
+/* ==========================================
+   CABEÇALHOS
+========================================== */
+
+.admin-overview .overview-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+
+    margin-bottom: 14px;
+}
+
+.admin-overview .overview-section-title {
+    margin: 0 0 12px;
+
+    color: var(--overview-muted);
+
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    line-height: 1.4;
+}
+
+.admin-overview .overview-section-header
+.overview-section-title {
+    margin-bottom: 0;
+}
+
+.admin-overview .overview-btn-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 7px 12px;
+
+    border: 1px solid var(--overview-border);
+    border-radius: 6px;
+
+    background: transparent;
+    color: var(--overview-muted);
+
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.admin-overview .overview-btn-refresh:hover {
+    border-color: var(--overview-gold);
+    color: var(--overview-gold);
+}
+
+/* ==========================================
+   CARDS DE INDICADORES
+========================================== */
+
+.admin-overview .overview-kpi-grid {
+    display: grid;
+
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+.admin-overview .overview-kpi {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+
+    min-width: 0;
+    min-height: 145px;
+
+    margin: 0;
+    padding: 19px;
+
+    background: #ffffff;
+    border: 1px solid var(--overview-border);
+    border-radius: 9px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.045);
+}
+
+.admin-overview .overview-kpi-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    letter-spacing: 0.45px;
+    line-height: 1.4;
+}
+
+.admin-overview .overview-status-dot {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.admin-overview .status-online {
+    color: #16a34a;
+}
+
+.admin-overview .status-offline,
+.admin-overview .status-alerta {
+    color: #dc2626;
+}
+
+.admin-overview .status-interacoes {
+    color: var(--overview-gold);
+}
+
+.admin-overview .overview-kpi-value {
+    color: var(--overview-text);
+
+    font-family: Georgia, "Times New Roman", serif;
+
+    font-size: clamp(2rem, 2.5vw, 2.8rem);
+    font-weight: 400;
+    line-height: 1.1;
+}
+
+.admin-overview .overview-kpi-value.overview-gold {
+    color: var(--overview-gold);
+}
+
+.admin-overview .overview-kpi-footer {
+    color: var(--overview-muted);
+
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.admin-overview .overview-positivo {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.admin-overview .overview-negativo {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* ==========================================
+   GRID DOS PAINÉIS
+========================================== */
+
+.admin-overview .overview-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(0, 1fr);
+
+    align-items: stretch;
+    gap: 16px;
+
+    width: 100%;
+}
+
+.admin-overview .overview-panel {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+}
+
+.admin-overview .overview-panel
+.overview-section-title {
+    margin-bottom: 12px;
+}
+
+.admin-overview .overview-bottom-grid {
+    margin-top: 24px;
+}
+
+/* ==========================================
+   GRÁFICOS
+========================================== */
+
+.admin-overview .overview-chart-card {
+    min-width: 0;
+    min-height: 320px;
+
+    margin: 0;
+    padding: 20px;
+
+    background: #ffffff;
+    border: 1px solid var(--overview-border);
+    border-radius: 9px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.045);
+}
+
+.admin-overview .overview-chart-area {
+    position: relative;
+
+    width: 100%;
+    height: 285px;
+
+    min-width: 0;
+}
+
+.admin-overview .overview-chart-area canvas {
+    display: block;
+
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* ==========================================
+   CONTEÚDOS MAIS VISUALIZADOS
+========================================== */
+
+.admin-overview .overview-list-card {
+    flex: 1;
+
+    min-width: 0;
+    min-height: 260px;
+
+    margin: 0;
+    padding: 18px;
+
+    background: #ffffff;
+    border: 1px solid var(--overview-border);
+    border-radius: 9px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.045);
+}
+
+.admin-overview .overview-conteudo-item {
+    margin-bottom: 17px;
+}
+
+.admin-overview .overview-conteudo-item:last-child {
+    margin-bottom: 0;
+}
+
+.admin-overview .overview-conteudo-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 12px;
+    margin-bottom: 7px;
+
+    font-size: 0.84rem;
+}
+
+.admin-overview .overview-conteudo-nome {
+    color: var(--overview-text);
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-overview .overview-conteudo-valor {
+    color: var(--overview-muted);
+
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.admin-overview .overview-progress {
+    width: 100%;
+    height: 5px;
+
+    overflow: hidden;
+
+    background: #e5e7eb;
+    border-radius: 5px;
+}
+
+.admin-overview .overview-progress-bar {
+    height: 100%;
+
+    background: var(--overview-gold);
+    border-radius: 5px;
+}
+
+/* ==========================================
+   ALERTAS
+========================================== */
+
+.admin-overview .overview-alert-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    flex: 1;
+
+    min-width: 0;
+    min-height: 260px;
+
+    margin: 0;
+    padding: 18px;
+
+    background: #ffffff;
+    border: 1px solid var(--overview-border);
+    border-radius: 9px;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.045);
+}
+
+.admin-overview .overview-alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.admin-overview .overview-alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+}
+
+.admin-overview .overview-alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 27px;
+    height: 27px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: rgba(220, 38, 38, 0.08);
+    color: #dc2626;
+
+    font-size: 0.8rem;
+}
+
+.admin-overview .overview-alert-content {
+    min-width: 0;
+}
+
+.admin-overview .overview-alert-name {
+    color: var(--overview-text);
+
+    font-size: 0.86rem;
+    font-weight: 600;
+
+    overflow-wrap: anywhere;
+}
+
+.admin-overview .overview-alert-description {
+    margin-top: 2px;
+
+    color: #dc2626;
+    font-size: 0.8rem;
+}
+
+.admin-overview .overview-alert-location {
+    margin-top: 3px;
+
+    color: var(--overview-muted);
+    font-size: 0.75rem;
+}
+
+.admin-overview .overview-alert-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-top: 20px;
+
+    color: var(--overview-gold);
+
+    font-size: 0.83rem;
+    font-weight: 600;
+
+    text-decoration: none;
+}
+
+.admin-overview .overview-alert-link:hover {
+    text-decoration: underline;
+}
+
+/* ==========================================
+   ESTADOS VAZIOS
+========================================== */
+
+.admin-overview .overview-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    min-height: 180px;
+
+    color: var(--overview-muted);
+    text-align: center;
+}
+
+.admin-overview .overview-empty i {
+    font-size: 25px;
+}
+
+.admin-overview .overview-empty p {
+    margin: 0;
+
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.admin-overview .overview-empty-success i {
+    color: #16a34a;
+}
+
+/* ==========================================
+   RODAPÉ
+========================================== */
+
+.admin-overview .overview-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 12px;
+    margin-top: 20px;
+
+    color: var(--overview-muted);
+
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.admin-overview .overview-footer i {
+    margin-right: 5px;
+}
+
+/* ==========================================
+   RESPONSIVIDADE
+========================================== */
+
+@media (max-width: 1200px) {
+
+    .admin-overview .overview-kpi-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+
+    .admin-overview .overview-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+
+    .admin-overview .overview-kpi-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .admin-overview .overview-kpi {
+        min-height: 125px;
+    }
+
+    .admin-overview .overview-chart-card {
+        min-height: 280px;
+        padding: 14px;
+    }
+
+    .admin-overview .overview-chart-area {
+        height: 250px;
+    }
+
+    .admin-overview .overview-section-header {
+        align-items: flex-start;
+    }
+}

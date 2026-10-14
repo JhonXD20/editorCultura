@@ -204,9 +204,11 @@
                 $icone = $dados['icone']
                     ?? 'totem/img/botoes/BTN_Historia.png';
 
-                $titulo = $dados['titulo']
-                    ?? $dados['texto']
-                    ?? 'HISTÓRIA';
+                $titulo = \App\Support\HtmlSanitizer::clean(
+                    $dados['titulo']
+                        ?? $dados['texto']
+                        ?? 'HISTÓRIA'
+                );
 
                 $destinoId = $dados['pagina_destino_id']
                     ?? null;
@@ -295,7 +297,9 @@
         @elseif ($tipo === 'texto' || $tipo === 'titulo_pagina')
 
             @php
-                $texto = $dados['texto'] ?? 'Texto Livre';
+                $texto = \App\Support\HtmlSanitizer::clean(
+                    $dados['texto'] ?? 'Texto Livre'
+                );
 
                 $largura = max(
                     1,

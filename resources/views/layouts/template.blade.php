@@ -24,11 +24,21 @@
 <!-- Área central onde as views filhas vão injetar o conteúdo -->
 @section('content')
     @yield('conteudo')
+    @include('partials.admin-notifications')
+@stop
+
+@section('content_top_nav_right')
+<li class="nav-item">
+    <button type="button" class="nav-link editor-theme-toggle" data-theme-toggle aria-label="Alternar tema">
+        <i class="fas fa-moon" data-theme-icon aria-hidden="true"></i>
+        <span class="editor-theme-toggle-label" data-theme-label>Tema escuro</span>
+    </button>
+</li>
 @stop
 
 <!-- Rodapé padronizado -->
 @section('footer')
-<div class="d-flex justify-content-between align-items-center dashboard-theme w-100" style="font-size: 0.85rem;"">
+<div class="d-flex justify-content-between align-items-center dashboard-theme w-100" style="font-size: 0.85rem;">
     <div class="text-muted">
         <strong>Copyright &copy; 2026 <a href="#" class="text-gold text-decoration-none">Editor Cultura</a>.</strong> Todos os direitos reservados.
     </div>
@@ -40,6 +50,8 @@
 
 <!-- CSS GLOBAL DA APLICAÇÃO -->
 @section('css')
+@include('partials.theme-loader')
+@vite('resources/css/admin-notifications.css')
 <!-- Google Fonts Globais -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -148,10 +160,12 @@
 
 <!-- Ponto de injeção para as views filhas mandarem CSS específico delas -->
 @yield('css_custom')
+@vite('resources/css/admin-theme.css')
 @stop
 
 <!-- JAVASCRIPT GLOBAL -->
 @section('js')
+@vite(['resources/js/theme.js', 'resources/js/admin-notifications.js'])
 <!-- Ponto de injeção para as views filhas mandarem JS específico (como o Chart.js) -->
 @yield('js_custom')
 @stop

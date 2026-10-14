@@ -1,0 +1,631 @@
+/* Identidade visual compartilhada por todo o painel administrativo. */
+body.editor-cultura-admin {
+    --bg-card: #ffffff;
+    --color-gold: #b67b2f;
+    --color-green: #21875c;
+    --color-red: #d9473d;
+    --color-text-main: #20252a;
+    --color-text-muted: #69737d;
+    --border-color: #dfe3e6;
+    --progress-bg: #e9ecef;
+    --card-shadow: 0 14px 38px rgba(26, 31, 36, .07);
+    --editor-bg: #f3f4f5;
+    --editor-surface: #ffffff;
+    --editor-surface-raised: #f7f8f9;
+    --editor-border: #dfe3e6;
+    --editor-text: #20252a;
+    --editor-muted: #69737d;
+    --editor-gold: #b67b2f;
+    --editor-red: #ef4b40;
+    --editor-green: #21875c;
+    --editor-chrome: rgba(255, 255, 255, .92);
+    --editor-sidebar: #ffffff;
+    --editor-brand: #fbfbfc;
+    --editor-grid-line: rgba(21, 27, 32, .025);
+    --editor-hover: rgba(182, 123, 47, .055);
+    --editor-workspace-color: #e7eaec;
+    --editor-placeholder: #7b858e;
+    background: var(--editor-bg);
+    color: var(--editor-text);
+    font-family: 'Inter', sans-serif;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin {
+    --bg-card: #1f1f1f;
+    --color-gold: #d8ad68;
+    --color-green: #42b883;
+    --color-red: #ef5b50;
+    --color-text-main: #f0f0f0;
+    --color-text-muted: #b4b4b4;
+    --border-color: #3b3b3b;
+    --progress-bg: #333333;
+    --card-shadow: 0 14px 35px rgba(0, 0, 0, .22);
+    --editor-bg: #181818;
+    --editor-surface: #1f1f1f;
+    --editor-surface-raised: #2a2d2e;
+    --editor-border: #3b3b3b;
+    --editor-text: #f0f0f0;
+    --editor-muted: #b4b4b4;
+    --editor-gold: #d8ad68;
+    --editor-red: #ef4b40;
+    --editor-green: #42b883;
+    --editor-chrome: rgba(30, 30, 30, .96);
+    --editor-sidebar: #1e1e1e;
+    --editor-brand: #181818;
+    --editor-grid-line: rgba(255, 255, 255, .018);
+    --editor-hover: rgba(216, 173, 104, .075);
+    --editor-workspace-color: #252526;
+    --editor-placeholder: #a0a0a0;
+}
+
+body.editor-cultura-admin .wrapper,
+body.editor-cultura-admin .content-wrapper,
+body.editor-cultura-admin .main-footer {
+    background: var(--editor-bg);
+}
+
+body.editor-cultura-admin .content-wrapper {
+    background-image:
+        radial-gradient(circle at 94% 4%, rgba(216, 173, 104, .055), transparent 23rem),
+        linear-gradient(var(--editor-grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--editor-grid-line) 1px, transparent 1px);
+    background-size: auto, 56px 56px, 56px 56px;
+}
+
+body.editor-cultura-admin .main-header {
+    border-bottom: 1px solid var(--editor-border);
+    background: var(--editor-chrome) !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .2);
+    backdrop-filter: blur(16px);
+}
+
+body.editor-cultura-admin .main-header .nav-link {
+    color: var(--editor-muted) !important;
+}
+
+body.editor-cultura-admin .main-header .nav-link:hover {
+    color: var(--editor-gold) !important;
+}
+
+body.editor-cultura-admin .editor-theme-toggle {
+    display: inline-flex;
+    height: 36px;
+    margin: 8px 6px 0 0;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--editor-border);
+    border-radius: 18px;
+    background: var(--editor-surface-raised);
+    color: var(--editor-muted) !important;
+    font: inherit;
+    font-size: .74rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+body.editor-cultura-admin .editor-theme-toggle:hover,
+body.editor-cultura-admin .editor-theme-toggle:focus-visible {
+    border-color: var(--editor-gold);
+    color: var(--editor-gold) !important;
+    outline: 0;
+}
+
+body.editor-cultura-admin .editor-theme-toggle i {
+    width: 14px;
+    text-align: center;
+}
+
+body.editor-cultura-admin .main-sidebar {
+    border-right: 1px solid var(--editor-border);
+    background: var(--editor-sidebar) !important;
+    box-shadow: none !important;
+}
+
+body.editor-cultura-admin .brand-link {
+    display: flex;
+    height: 64px;
+    align-items: center;
+    border-bottom: 1px solid var(--editor-border) !important;
+    background: #181818;
+    color: #f0f0f0 !important;
+    font-size: .98rem;
+    letter-spacing: -.015em;
+}
+
+body.editor-cultura-admin .brand-link:hover,
+body.editor-cultura-admin .brand-link:focus-visible {
+    background: #202020;
+    color: #ffffff !important;
+}
+
+body.editor-cultura-admin .brand-link .editor-brand-image {
+    width: 35px;
+    height: 35px;
+    margin: 0 12px 0 0;
+    border-radius: 9px;
+    object-fit: cover;
+    object-position: left center;
+    box-shadow: none !important;
+}
+
+body.editor-cultura-admin .sidebar {
+    padding: 14px 10px;
+}
+
+body.editor-cultura-admin .nav-sidebar .nav-item > .nav-link {
+    margin-bottom: 5px;
+    padding: .76rem .85rem;
+    border-radius: 10px;
+    color: var(--editor-muted);
+    font-size: .82rem;
+    font-weight: 500;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+
+body.editor-cultura-admin .nav-sidebar .nav-item > .nav-link:hover {
+    background: rgba(255, 255, 255, .045);
+    color: var(--editor-text);
+    transform: translateX(2px);
+}
+
+body.editor-cultura-admin .nav-sidebar .nav-item > .nav-link.active {
+    background: linear-gradient(100deg, rgba(216, 173, 104, .17), rgba(216, 173, 104, .055));
+    color: var(--editor-gold);
+    box-shadow: inset 2px 0 var(--editor-gold);
+}
+
+body.editor-cultura-admin .nav-sidebar .nav-icon {
+    color: currentColor;
+    font-size: .9rem;
+}
+
+body.editor-cultura-admin .content-header {
+    padding: 28px 28px 14px;
+}
+
+body.editor-cultura-admin .content {
+    padding: 0 28px;
+}
+
+body.editor-cultura-admin .custom-header {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--editor-border);
+}
+
+body.editor-cultura-admin .custom-header h1 {
+    color: var(--editor-text) !important;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1.6rem, 2.5vw, 2.15rem);
+    font-weight: 600;
+    letter-spacing: -.045em;
+}
+
+body.editor-cultura-admin .text-muted-custom,
+body.editor-cultura-admin .text-muted {
+    color: var(--editor-muted) !important;
+}
+
+body.editor-cultura-admin .text-green {
+    color: var(--editor-green) !important;
+}
+
+body.editor-cultura-admin .dashboard-card,
+body.editor-cultura-admin .card,
+body.editor-cultura-admin .content-summary-card,
+body.editor-cultura-admin .overview-kpi,
+body.editor-cultura-admin .overview-chart-card,
+body.editor-cultura-admin .overview-list-card,
+body.editor-cultura-admin .overview-alert-card {
+    border: 1px solid var(--editor-border);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .018), transparent 45%), var(--editor-surface);
+    color: var(--editor-text);
+    box-shadow: var(--card-shadow);
+}
+
+body.editor-cultura-admin .overview-kpi {
+    position: relative;
+    overflow: hidden;
+}
+
+body.editor-cultura-admin .overview-kpi::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 54px;
+    height: 54px;
+    border-radius: 0 0 0 54px;
+    background: rgba(216, 173, 104, .055);
+    content: '';
+}
+
+body.editor-cultura-admin .overview-kpi-value,
+body.editor-cultura-admin .content-summary-card strong,
+body.editor-cultura-admin .content-manager-card-heading h2,
+body.editor-cultura-admin .content-page-identity a,
+body.editor-cultura-admin .content-page-date span,
+body.editor-cultura-admin .dispositivo-nome {
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin .content-manager,
+body.editor-cultura-admin .totens-page {
+    --content-green: var(--editor-gold);
+    --content-green-soft: rgba(216, 173, 104, .11);
+    --content-border: var(--editor-border);
+    --content-text: var(--editor-text);
+    --content-muted: var(--editor-muted);
+    --totens-border: var(--editor-border);
+    --totens-text: var(--editor-text);
+    --totens-muted: var(--editor-muted);
+}
+
+body.editor-cultura-admin .content-summary-icon,
+body.editor-cultura-admin .content-layout-badge,
+body.editor-cultura-admin .content-page-icon {
+    background: rgba(216, 173, 104, .1);
+    color: var(--editor-gold);
+}
+
+body.editor-cultura-admin .content-summary-icon.is-inactive {
+    background: rgba(239, 75, 64, .1);
+    color: var(--editor-red);
+}
+
+body.editor-cultura-admin input:not([type='checkbox']):not([type='radio']),
+body.editor-cultura-admin select,
+body.editor-cultura-admin textarea,
+body.editor-cultura-admin .form-control,
+body.editor-cultura-admin .content-manager-search input,
+body.editor-cultura-admin .totens-form-control {
+    border-color: var(--editor-border);
+    border-radius: 9px;
+    background-color: var(--editor-surface-raised);
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin input::placeholder,
+body.editor-cultura-admin textarea::placeholder {
+    color: var(--editor-placeholder);
+}
+
+body.editor-cultura-admin input:focus,
+body.editor-cultura-admin select:focus,
+body.editor-cultura-admin textarea:focus,
+body.editor-cultura-admin .form-control:focus {
+    border-color: rgba(216, 173, 104, .75);
+    background: var(--editor-surface-raised);
+    color: var(--editor-text);
+    box-shadow: 0 0 0 3px rgba(216, 173, 104, .1);
+}
+
+body.editor-cultura-admin .table,
+body.editor-cultura-admin .custom-table,
+body.editor-cultura-admin .content-manager-table {
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin .table td,
+body.editor-cultura-admin .table th {
+    border-color: var(--editor-border);
+}
+
+body.editor-cultura-admin .table tbody tr:hover,
+body.editor-cultura-admin .custom-table tbody tr:hover,
+body.editor-cultura-admin .content-manager-table tbody tr:hover {
+    background: var(--editor-hover);
+}
+
+body.editor-cultura-admin .modal-content,
+body.editor-cultura-admin dialog,
+body.editor-cultura-admin .totens-dialog,
+body.editor-cultura-admin .content-manager-dialog {
+    border: 1px solid var(--editor-border);
+    border-radius: 16px;
+    background: var(--editor-surface);
+    color: var(--editor-text);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .5);
+}
+
+body.editor-cultura-admin .modal-header,
+body.editor-cultura-admin .modal-footer,
+body.editor-cultura-admin .totens-dialog-header,
+body.editor-cultura-admin .totens-dialog-footer {
+    border-color: var(--editor-border);
+}
+
+body.editor-cultura-admin .totens-dialog-header h4,
+body.editor-cultura-admin .totens-form-group label,
+body.editor-cultura-admin .content-dialog-heading h3 {
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin .detalhe-campo {
+    border-color: var(--editor-border);
+}
+
+body.editor-cultura-admin .btn-primary,
+body.editor-cultura-admin .btn-gold,
+body.editor-cultura-admin .content-manager-create,
+body.editor-cultura-admin .btn-cadastrar-totem,
+body.editor-cultura-admin .btn-salvar-cadastro {
+    border-color: #c99750;
+    border-radius: 9px;
+    background: linear-gradient(100deg, #c99750, #e0bc7e);
+    color: #15110c;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(201, 151, 80, .1);
+}
+
+body.editor-cultura-admin .btn-primary:hover,
+body.editor-cultura-admin .btn-gold:hover,
+body.editor-cultura-admin .content-manager-create:hover,
+body.editor-cultura-admin .btn-cadastrar-totem:hover,
+body.editor-cultura-admin .btn-salvar-cadastro:hover {
+    border-color: #e5c58c;
+    background: linear-gradient(100deg, #d6aa68, #e7c990);
+    color: #15110c;
+}
+
+body.editor-cultura-admin .main-footer {
+    border-top: 1px solid var(--editor-border);
+    color: var(--editor-muted);
+}
+
+body.editor-cultura-admin .dropdown-menu {
+    border: 1px solid var(--editor-border);
+    border-radius: 12px;
+    background: var(--editor-surface-raised);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+}
+
+body.editor-cultura-admin .dropdown-item {
+    color: var(--editor-muted);
+}
+
+body.editor-cultura-admin .dropdown-item:hover {
+    background: rgba(216, 173, 104, .08);
+    color: var(--editor-gold);
+}
+
+body.editor-cultura-admin .content-wrapper,
+body.editor-cultura-admin .main-header,
+body.editor-cultura-admin .main-sidebar,
+body.editor-cultura-admin .main-footer,
+body.editor-cultura-admin .dashboard-card,
+body.editor-cultura-admin .card,
+body.editor-cultura-admin input,
+body.editor-cultura-admin select,
+body.editor-cultura-admin textarea {
+    transition: background-color .22s ease, border-color .22s ease, color .22s ease;
+}
+
+/* O editor visual usa componentes próprios; estes tokens mantêm o mesmo tema. */
+body.editor-cultura-admin .visual-editor-shell {
+    --editor-accent: var(--editor-gold);
+    --editor-accent-soft: rgba(216, 173, 104, .11);
+    --editor-panel: var(--editor-surface);
+    --editor-workspace: var(--editor-workspace-color);
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin .visual-editor-toolbar,
+body.editor-cultura-admin .visual-editor-sidebar,
+body.editor-cultura-admin .visual-editor-tabs,
+body.editor-cultura-admin .visual-editor-help,
+body.editor-cultura-admin .visual-editor-app-menu nav,
+body.editor-cultura-admin .visual-editor-app-menu > summary,
+body.editor-cultura-admin .visual-editor-icon-button,
+body.editor-cultura-admin .cultura-format-actions button,
+body.editor-cultura-admin .cultura-inspector-group textarea {
+    border-color: var(--editor-border);
+    background: var(--editor-surface);
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin .visual-editor-layout {
+    border-color: var(--editor-border);
+    background: var(--editor-workspace);
+}
+
+body.editor-cultura-admin .visual-editor-device,
+body.editor-cultura-admin .visual-editor-new-page input,
+body.editor-cultura-admin .cultura-inspector-group input,
+body.editor-cultura-admin .cultura-inspector-group select {
+    border-color: var(--editor-border);
+    background: var(--editor-surface-raised);
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin .visual-editor-page-link,
+body.editor-cultura-admin .visual-editor-app-menu nav a,
+body.editor-cultura-admin .cultura-inspector-empty,
+body.editor-cultura-admin .cultura-inspector-group label {
+    color: var(--editor-muted);
+}
+
+body.editor-cultura-admin .visual-editor-page-link:hover,
+body.editor-cultura-admin .visual-editor-page-link.is-current,
+body.editor-cultura-admin .visual-editor-app-menu nav a:hover,
+body.editor-cultura-admin .visual-editor-app-menu nav a.is-current {
+    background: var(--editor-accent-soft);
+    color: var(--editor-gold);
+}
+
+body.editor-cultura-admin .visual-editor-shell .gjs-one-bg {
+    background-color: var(--editor-surface);
+}
+
+body.editor-cultura-admin .visual-editor-shell .gjs-two-color {
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin .visual-editor-shell .gjs-cv-canvas {
+    background: var(--editor-workspace-color);
+}
+
+body.editor-cultura-admin .visual-editor-shell .gjs-block,
+body.editor-cultura-admin .visual-editor-shell .gjs-sm-field,
+body.editor-cultura-admin .visual-editor-shell .gjs-field {
+    border-color: var(--editor-border);
+    background: var(--editor-surface-raised);
+    color: var(--editor-text);
+}
+
+/* Contraste reforçado do editor visual no tema escuro. */
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-notice {
+    border-color: #6e5a31;
+    background: #332d20;
+    color: #f0d99f;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-page-title,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-panel-heading,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-pages > summary,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-content-inspector,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-empty strong,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-heading strong {
+    color: #f0f0f0;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-status,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-panel-heading small,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-help,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-empty,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-empty i,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-group small,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-position-grid label {
+    color: #b7b7b7;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-icon-button:disabled {
+    color: #808080;
+    opacity: .72;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-icon-button.is-active {
+    border-color: #806a43;
+    background: #3a3225;
+    color: #f1c980;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-toolbar .btn-outline-secondary,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-toolbar .btn-outline-primary,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-toolbar .btn-outline-danger {
+    border-color: #555555;
+    background: #2a2d2e;
+    color: #e2e2e2;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-toolbar .btn-outline-primary:hover {
+    border-color: #d8ad68;
+    color: #f1c980;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-toolbar .btn-outline-danger {
+    border-color: #85504c;
+    color: #ff8d85;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-toolbar .btn-success {
+    border-color: #3e9b6d;
+    background: #287a53;
+    color: #ffffff;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-help kbd {
+    border-color: #555555;
+    background: #303030;
+    color: #f0f0f0;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-sm-sector-title,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-layer-title,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-heading {
+    border-color: #454545;
+    background: #2d2d30;
+    color: #f0f0f0;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-label-wrp,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field-wrp,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-sm-sector,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-sm-sector-title,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-sm-property,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-trt-trait,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-layer,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-layer-title,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-sm-label,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-trt-trait__wrp-label {
+    color: #dddddd;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-sm-field {
+    border-color: #505050;
+    background: #313131;
+    color: #f0f0f0;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field input,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field select,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field textarea,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-sm-field input,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-sm-field select {
+    color: #f0f0f0 !important;
+    -webkit-text-fill-color: #f0f0f0;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field input::placeholder,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field textarea::placeholder {
+    color: #aaaaaa;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field-arrow-u {
+    border-bottom-color: #c8c8c8;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-field-arrow-d,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-d-s-arrow {
+    border-top-color: #c8c8c8;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-heading span {
+    background: #3a3a3a;
+    color: #d7d7d7;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-group label {
+    color: #dedede;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-group input,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-group select,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-inspector-group textarea,
+html[data-theme='dark'] body.editor-cultura-admin .cultura-format-actions button {
+    border-color: #505050;
+    background: #313131;
+    color: #f0f0f0;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .cultura-image-preview {
+    border-color: #5c5c5c;
+    background: #2a2a2a;
+    color: #c0c0c0;
+}
+
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-block:hover,
+html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-block:focus-visible {
+    border-color: #d8ad68;
+    background: #353027;
+    color: #f4d49a;
+}
+
+@media (max-width: 767px) {
+    body.editor-cultura-admin .content-header { padding: 20px 16px 10px; }
+    body.editor-cultura-admin .content { padding: 0 16px; }
+    body.editor-cultura-admin .custom-header { align-items: flex-start !important; gap: 12px; }
+    body.editor-cultura-admin .editor-theme-toggle-label { display: none; }
+    body.editor-cultura-admin .editor-theme-toggle { width: 36px; padding: 0; justify-content: center; }
+}

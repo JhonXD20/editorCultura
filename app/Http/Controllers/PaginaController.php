@@ -3,55 +3,56 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pagina;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaginaController extends Controller
 {
-    public function index()
+    public function index(): View
     {
-        $paginaPrincipal = Pagina::with('conteudos')->where('pagina_tipo_layout', 'home')->first();
-        // Busca todas as outras páginas para aparecerem no `<select>` do modal
-        $todasPaginas = Pagina::where('pagina_tipo_layout', '!=', 'home')->get();
+        $paginas = $this->paginasOrdenadas()->get();
 
-        return view('gestao-conteudo', compact('paginaPrincipal', 'todasPaginas'));
+        $resumo = [
+            'todas' => $paginas->count(),
+            'publicadas' => $paginas->whereNotNull('published_at')->count(),
+            'rascunhos' => $paginas->whereNull('published_at')->count(),
+            'inativas' => $paginas->where('pagina_ativo', false)->count(),
+        ];
+
+        return view('gestao-conteudo-index', compact('paginas', 'resumo'));
     }
 
-    public function create()
-    {
-        return view('gestao-conteudo.create');
-    }
-
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'pagina_titulo' => 'required|max:100',
-            'pagina_tipo_layout' => 'required|max:45'
+            'pagina_titulo' => ['required', 'string', 'max:100'],
+            'pagina_tipo_layout' => ['required', 'in:home,interna,padrao'],
         ]);
 
-        Pagina::create($validated);
+        $pagina = Pagina::create($validated);
 
-        // Redireciona usando o nome exato gerado pelo seu Route::resource
-        return redirect()->route('gestao-conteudo.index')
+        return redirect()->route('gestao-conteudo.edit', $pagina)
             ->with('success', 'Página criada com sucesso!');
     }
 
-    // O parâmetro reflete o que você definiu em ->parameters()
-    public function edit($id)
+    public function edit($id): View
     {
-        // Busca a subpágina específica e o miolo dela
         $pagina = Pagina::with('conteudos')->findOrFail($id);
 
-        return view('gestao-conteudo-editor', compact('pagina'));
+        return $this->renderEditor($pagina);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): RedirectResponse
     {
         $pagina = Pagina::findOrFail($id);
 
         $validated = $request->validate([
-            'pagina_titulo' => 'required|max:100',
-            'pagina_tipo_layout' => 'required|max:45',
-            'pagina_ativo' => 'boolean'
+            'pagina_titulo' => ['required', 'string', 'max:100'],
+            'pagina_tipo_layout' => ['required', 'in:home,interna,padrao'],
+            'pagina_ativo' => ['boolean'],
         ]);
 
         $pagina->update($validated);
@@ -60,12 +61,47 @@ class PaginaController extends Controller
             ->with('success', 'Página atualizada!');
     }
 
-    public function destroy($id)
+    public function destroy($id): RedirectResponse
     {
         $pagina = Pagina::findOrFail($id);
-        $pagina->delete();
+
+        $deleted = DB::transaction(function () use ($pagina): bool {
+            $total = Pagina::query()
+                ->lockForUpdate()
+                ->get(['id'])
+                ->count();
+
+            if ($total <= 1) {
+                return false;
+            }
+
+            $pagina->delete();
+
+            return true;
+        });
+
+        if (! $deleted) {
+            return redirect()->route('gestao-conteudo.index')
+                ->with('error', 'A última página não pode ser excluída. Crie outra página primeiro.');
+        }
 
         return redirect()->route('gestao-conteudo.index')
-            ->with('success', 'Página excluída.');
+            ->with('success', 'Página excluída com sucesso.');
+    }
+
+    private function renderEditor(Pagina $pagina): View
+    {
+        $paginas = $this->paginasOrdenadas()->get();
+
+        return view('gestao-conteudo-grapes', compact('pagina', 'paginas'));
+    }
+
+    private function paginasOrdenadas(): Builder
+    {
+        return Pagina::query()
+            ->orderByRaw("CASE WHEN pagina_tipo_layout = 'home' THEN 0 ELSE 1 END")
+            ->orderBy('grupo_slide')
+            ->orderBy('ordem_slide')
+            ->orderBy('pagina_titulo');
     }
 }

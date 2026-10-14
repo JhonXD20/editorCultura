@@ -17,6 +17,17 @@ class Pagina extends Model
         'pagina_ativo',
         'grupo_slide',
         'ordem_slide',
+        'editor_project_data',
+        'published_html',
+        'published_css',
+        'editor_version',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'pagina_ativo' => 'boolean',
+        'editor_project_data' => 'array',
+        'published_at' => 'datetime',
     ];
 
     // Relacionamento 1:N (Uma página possui vários conteúdos)

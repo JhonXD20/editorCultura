@@ -63,12 +63,12 @@ return [
     |
     */
 
-    'logo' => '<b>Editor</b>Cultura',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo' => '<b>Editor</b> Cultura',
+    'logo_img' => 'totem/img/uploads/1790714869_logo_invent2.png',
+    'logo_img_class' => 'brand-image editor-brand-image',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Admin Logo',
+    'logo_img_alt' => 'Editor Cultura',
 
     /*
     |--------------------------------------------------------------------------
@@ -157,7 +157,7 @@ return [
     'layout_fixed_sidebar' => true,
     'layout_fixed_navbar' => true,
     'layout_fixed_footer' => null,
-    'layout_dark_mode' => null,
+    'layout_dark_mode' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -190,15 +190,15 @@ return [
     |
     */
 
-    'classes_body' => '',
+    'classes_body' => 'editor-cultura-admin',
     'classes_brand' => '',
     'classes_brand_text' => '',
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
-    'classes_sidebar' => 'sidebar-dark-primary elevation-4',
-    'classes_sidebar_nav' => '',
-    'classes_topnav' => 'navbar-white navbar-light',
+    'classes_sidebar' => 'sidebar-dark-primary',
+    'classes_sidebar_nav' => 'nav-compact',
+    'classes_topnav' => 'navbar-dark',
     'classes_topnav_nav' => 'navbar-expand',
     'classes_topnav_container' => 'container',
 
@@ -327,7 +327,7 @@ return [
 
         ],
         [
-            'text' => 'Gestão de Conteudos',
+            'text' => 'Gestão de Conteúdo',
             'url' => '/gestao-conteudo',
             'icon' => 'fa fa-object-group',
         ],

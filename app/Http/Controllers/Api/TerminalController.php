@@ -13,12 +13,12 @@ class TerminalController extends Controller
     public function syncAcervo()
     {
         $paginas = Pagina::with('conteudos')
-            ->where('totem_ativo', true)
+            ->where('pagina_ativo', true)
             ->get();
 
         return response()->json([
             'status' => 'success',
-            'data' => $paginas
+            'data' => $paginas,
         ]);
     }
 
@@ -29,6 +29,7 @@ class TerminalController extends Controller
 
         if ($totem) {
             $totem->update(['totem_ping' => now()]);
+
             return response()->json(['status' => 'online']);
         }
 
