@@ -1,3 +1,4 @@
+import { createInactivityTimer, useLandscapeLayout } from './totem-player';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -16,6 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!viewport || !palco || !canvas) {
         return;
     }
+
+    const areaExibicao = document.getElementById('totemDisplayArea') || viewport;
+    const orientacao = viewport.dataset.orientacao || 'auto';
+    const telaHorizontal = window.matchMedia('(orientation: landscape)');
+    const layoutHorizontal = () => useLandscapeLayout(orientacao, telaHorizontal.matches);
 
     /* =====================================
        1. CONFIGURAÇÃO DO CANVAS
@@ -44,9 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
      * perdiam as posicoes ate a janela ser reduzida (por exemplo, ao abrir o
      * inspetor do navegador).
      *
-     * Reaplicamos as regras do perfil-base somente em telas de desktop. As
-     * regras originais de tablet e celular continuam controlando larguras de
-     * ate 992px.
+     * Reaplicamos o perfil-base nos tablets horizontais, inclusive abaixo de
+     * 992px, e nas telas de desktop. O perfil vertical mantém suas próprias
+     * regras responsivas.
      */
     function prepararLayoutBaseResponsivo() {
         if (!paginaResponsiva) {
@@ -89,8 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const compatibilidade = document.createElement('style');
         compatibilidade.id = 'publishedDesktopCompatibilityStyles';
-        compatibilidade.textContent =
-            `@media (min-width: 993px) {${regrasBase}}`;
+        compatibilidade.textContent = layoutHorizontal()
+            ? regrasBase
+            : `@media (min-width: 993px) {${regrasBase}}`;
+        document.getElementById(compatibilidade.id)?.remove();
         publishedStyles.after(compatibilidade);
     }
 
@@ -110,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     /max-width\s*:\s*(\d+(?:\.\d+)?)px/i
                 );
 
-                const menorLarguraCompativel = paginaResponsivaAnterior
+                const menorLarguraCompativel = paginaResponsivaAnterior && !layoutHorizontal()
                     ? 992
                     : largura;
 
@@ -131,8 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function ajustarEscala() {
 
-        const larguraTela = viewport.clientWidth;
-        const alturaTela = viewport.clientHeight;
+        const larguraTela = areaExibicao.clientWidth;
+        const alturaTela = areaExibicao.clientHeight;
 
         if (!larguraTela || !alturaTela) {
             return;
@@ -140,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (
             paginaResponsiva &&
+            !layoutHorizontal() &&
             window.matchMedia('(max-width: 992px)').matches
         ) {
             palco.style.width = `${larguraTela}px`;
@@ -153,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const usarTabletAnterior =
             paginaResponsivaAnterior &&
+            !layoutHorizontal() &&
             window.matchMedia('(max-width: 992px)').matches;
         const larguraLayout = usarTabletAnterior ? 768 : largura;
         const alturaLayout = usarTabletAnterior ? 1024 : altura;
@@ -182,6 +192,25 @@ document.addEventListener('DOMContentLoaded', () => {
         'resize',
         ajustarEscala
     );
+
+    if (window.ResizeObserver) {
+        new ResizeObserver(ajustarEscala).observe(areaExibicao);
+    }
+
+    const avisoOrientacao = document.getElementById('totemOrientationNotice');
+    function atualizarOrientacao() {
+        prepararLayoutBaseResponsivo();
+        ajustarEscala();
+        if (!avisoOrientacao) return;
+        const divergente = orientacao !== 'auto'
+            && (orientacao === 'landscape') !== telaHorizontal.matches;
+        avisoOrientacao.hidden = !divergente;
+        avisoOrientacao.textContent = orientacao === 'landscape'
+            ? 'Gire o tablet para a horizontal para uma melhor experiência.'
+            : 'Gire o tablet para a vertical para uma melhor experiência.';
+    }
+    telaHorizontal.addEventListener?.('change', atualizarOrientacao);
+    atualizarOrientacao();
 
     /* =====================================
        2. REGISTRO DE INTERAÇÕES
@@ -304,15 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ouvirPonteiro(viewport);
 
-    // Zonas podem estar fora do viewport.
-    ouvirPonteiro(
-        document.getElementById('touchZoneLeft')
-    );
-
-    ouvirPonteiro(
-        document.getElementById('touchZoneRight')
-    );
-
     /* =====================================
        4. TEMPO DE PERMANÊNCIA
 
@@ -386,49 +406,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function irDireita() {
-        navegar(proximaUrl || inicialUrl);
+        navegar(proximaUrl);
     }
 
     function irEsquerda() {
         navegar(anteriorUrl);
     }
 
-    function prepararZona(id, callback) {
+    const tempoInativo = Number(viewport.dataset.inatividadeSegundos) || 0;
+    if (tempoInativo > 0 && inicialUrl && String(paginaId) !== viewport.dataset.paginaInicialId) {
+        const inatividade = createInactivityTimer({
+            timeoutMs: tempoInativo * 1000,
+            onIdle: () => window.location.replace(inicialUrl),
+        });
 
-        const zona = document.getElementById(id);
+        ['pointerdown', 'keydown', 'wheel', 'scroll', 'input']
+            .forEach((evento) => document.addEventListener(
+                evento, inatividade.reset, { passive: true, capture: true }
+            ));
 
-        if (!zona) {
-            return;
-        }
-
-        zona.addEventListener('click', callback);
-
-        zona.addEventListener(
-            'keydown',
-            (evento) => {
-
-                if (
-                    evento.key === 'Enter' ||
-                    evento.key === ' '
-                ) {
-                    evento.preventDefault();
-
-                    registrarToque();
-                    callback();
-                }
-            }
-        );
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) inatividade.pause();
+            else inatividade.resume();
+        });
+        if (document.hidden) inatividade.pause();
+        window.addEventListener('pagehide', inatividade.pause);
+        window.addEventListener('pageshow', (evento) => {
+            if (evento.persisted) inatividade.resume();
+        });
     }
 
-    prepararZona(
-        'touchZoneLeft',
-        irEsquerda
-    );
-
-    prepararZona(
-        'touchZoneRight',
-        irDireita
-    );
+    const telaCheia = document.getElementById('totemFullscreen');
+    if (telaCheia && document.documentElement.requestFullscreen) {
+        telaCheia.hidden = false;
+        telaCheia.addEventListener('click', async () => {
+            try {
+                if (document.fullscreenElement) await document.exitFullscreen();
+                else await document.documentElement.requestFullscreen();
+            } catch (erro) {
+                // O navegador pode negar a solicitação; a navegação continua disponível.
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            telaCheia.setAttribute('aria-label', document.fullscreenElement
+                ? 'Sair da tela cheia' : 'Entrar em tela cheia');
+            telaCheia.querySelector('i').className = document.fullscreenElement
+                ? 'fas fa-compress' : 'fas fa-expand';
+        });
+    }
 
     /* =====================================
        6. BOTÕES DO CONTEÚDO
@@ -495,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (
                 evento.target.closest(
-                    'input, textarea, [role="button"], [role="link"]'
+                    'input, textarea, select, button, a, [contenteditable="true"], [role="button"], [role="link"]'
                 )
             ) {
                 return;
@@ -503,7 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (evento.key === 'ArrowRight') {
 
-                if (proximaUrl || inicialUrl) {
+                if (proximaUrl) {
                     registrarToque();
                     irDireita();
                 }

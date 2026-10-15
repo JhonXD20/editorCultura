@@ -48,7 +48,10 @@
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",
-            "@php artisan test"
+            "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-tests.ps1"
+        ],
+        "demo": [
+            "@php artisan db:seed --class=DemoSeeder"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

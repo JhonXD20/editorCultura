@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,600&display=swap');
+@import './brand.css';
 
 :root {
     color-scheme: dark;
@@ -133,26 +134,8 @@ body.editor-login-page {
 }
 
 .editor-login-brand-mark {
-    display: grid;
-    width: 42px;
-    height: 42px;
-    grid-template-columns: 1fr 1fr;
-    gap: 3px;
-    transform: rotate(45deg);
+    --totemsync-brand-red: var(--login-red);
 }
-
-.editor-login-brand-mark i {
-    display: block;
-    border: 1px solid rgba(255, 255, 255, .52);
-    background: rgba(255, 255, 255, .025);
-}
-
-.editor-login-brand-mark i:first-child {
-    background: var(--login-red);
-    border-color: var(--login-red);
-}
-
-.editor-login-brand-mark i:last-child { grid-column: 1 / -1; }
 
 .editor-login-brand strong,
 .editor-login-brand small { display: block; }
@@ -451,8 +434,8 @@ body.editor-login-page {
     .editor-login-theme-toggle span { display: none; }
 }
 
-html[data-theme='light'] .editor-login-brand-mark i {
-    border-color: rgba(29, 34, 39, .42);
+html[data-theme='light'] .editor-login-brand-mark {
+    --totemsync-brand-line: rgba(29, 34, 39, .42);
 }
 
 html[data-theme='light'] .editor-login-showcase-copy p,

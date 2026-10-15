@@ -1,6 +1,6 @@
 @extends('layouts.template')
 
-@section('page_title', 'Gestão de páginas - Editor Cultura')
+@section('page_title', 'Gestão de páginas - TotemSync')
 @section('header_title', 'Gestão de conteúdo')
 @section('header_subtitle', 'Crie, encontre e administre todas as páginas do aplicativo.')
 

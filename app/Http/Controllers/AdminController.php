@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InteracaoTotem;
 use App\Models\Pagina;
 use App\Models\Totem;
-
 use Carbon\Carbon;
-
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -77,8 +75,7 @@ class AdminController extends Controller
         $total = $totens->count();
 
         $online = $totens->filter(
-            fn(Totem $totem): bool =>
-            $totem->status_monitoramento === 'online'
+            fn (Totem $totem): bool => $totem->status_monitoramento === 'online'
         )->count();
 
         return [
@@ -142,18 +139,21 @@ class AdminController extends Controller
         Carbon $agora
     ): array {
         $inicio = $agora->copy()->startOfDay();
+        $expressaoHora = DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%H', created_at) AS INTEGER)"
+            : 'HOUR(created_at)';
 
         $registros = DB::table('interacoes_totem')
             ->selectRaw(
-                'HOUR(created_at) AS hora,
-                 COUNT(*) AS total'
+                "{$expressaoHora} AS hora,
+                 COUNT(*) AS total"
             )
             ->where('tipo', 'toque')
             ->whereBetween(
                 'created_at',
                 [$inicio, $agora]
             )
-            ->groupByRaw('HOUR(created_at)')
+            ->groupByRaw($expressaoHora)
             ->pluck('total', 'hora');
 
         $labels = [];
@@ -284,7 +284,7 @@ class AdminController extends Controller
                     $pagina?->getAttribute('pagina_titulo')
                     ?: $pagina?->getAttribute('pagina_nome')
                     ?: $pagina?->getAttribute('titulo')
-                    ?: 'Página #' . $registro->pagina_id;
+                    ?: 'Página #'.$registro->pagina_id;
 
                 $total = (int) $registro->total;
 
@@ -312,31 +312,27 @@ class AdminController extends Controller
         Collection $totens
     ): Collection {
         $offline = $totens->filter(
-            fn(Totem $totem): bool =>
-            $totem->status_monitoramento === 'offline'
+            fn (Totem $totem): bool => $totem->status_monitoramento === 'offline'
         );
 
         return $offline
             ->sortBy(
-                fn(Totem $totem): int =>
-                $totem->totem_ping?->timestamp ?? 0
+                fn (Totem $totem): int => $totem->totem_ping?->timestamp ?? 0
             )
             ->take(5)
             ->map(
                 function (Totem $totem): array {
                     $mensagem = $totem->totem_ping
-                        ? 'Último contato ' .
+                        ? 'Último contato '.
                         $totem->totem_ping->diffForHumans()
                         : 'Nenhuma comunicação registrada';
 
                     return [
                         'id' => $totem->id,
 
-                        'nome' =>
-                        $totem->totem_nome_identificacao,
+                        'nome' => $totem->totem_nome_identificacao,
 
-                        'localizacao' =>
-                        $totem->totem_localizacao
+                        'localizacao' => $totem->totem_localizacao
                             ?: 'Localização não informada',
 
                         'mensagem' => $mensagem,

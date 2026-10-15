@@ -48,6 +48,47 @@ class PageManagementTest extends TestCase
         $this->assertDatabaseMissing('paginas', ['id' => $page->id]);
     }
 
+    public function test_authenticated_user_can_create_and_update_a_page(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->post(route('gestao-conteudo.store'), [
+                'pagina_titulo' => 'Nova exposição',
+                'pagina_tipo_layout' => 'interna',
+            ]);
+
+        $page = Pagina::where('pagina_titulo', 'Nova exposição')->firstOrFail();
+        $response->assertRedirect(route('gestao-conteudo.edit', $page));
+
+        $this->actingAs($user)
+            ->put(route('gestao-conteudo.update', $page), [
+                'pagina_titulo' => 'Exposição atualizada',
+                'pagina_tipo_layout' => 'padrao',
+                'pagina_ativo' => false,
+            ])
+            ->assertRedirect(route('gestao-conteudo.index'));
+
+        $this->assertDatabaseHas('paginas', [
+            'id' => $page->id,
+            'pagina_titulo' => 'Exposição atualizada',
+            'pagina_tipo_layout' => 'padrao',
+            'pagina_ativo' => false,
+        ]);
+    }
+
+    public function test_page_validation_rejects_invalid_data(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->post(route('gestao-conteudo.store'), [
+                'pagina_titulo' => '',
+                'pagina_tipo_layout' => 'desconhecido',
+            ])
+            ->assertSessionHasErrors(['pagina_titulo', 'pagina_tipo_layout']);
+
+        $this->assertDatabaseCount('paginas', 0);
+    }
+
     public function test_last_page_cannot_be_deleted(): void
     {
         $user = User::factory()->create();

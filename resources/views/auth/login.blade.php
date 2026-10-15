@@ -1,6 +1,6 @@
 @extends('adminlte::master')
 
-@section('title', 'Acesso administrativo | Editor Cultura')
+@section('title', 'Acesso administrativo | TotemSync')
 
 @section('classes_body', 'editor-login-page')
 
@@ -20,13 +20,11 @@
             <span></span><span></span><span></span>
         </div>
 
-        <section class="editor-login-showcase" aria-label="Apresentação do Editor Cultura">
+        <section class="editor-login-showcase" aria-label="Apresentação do TotemSync">
             <div class="editor-login-brand">
-                <span class="editor-login-brand-mark" aria-hidden="true">
-                    <i></i><i></i><i></i>
-                </span>
+                @include('partials.brand-mark', ['brandMarkClass' => 'editor-login-brand-mark'])
                 <span>
-                    <strong>Editor Cultura</strong>
+                    <strong>TotemSync</strong>
                     <small>Plataforma de experiências digitais</small>
                 </span>
             </div>

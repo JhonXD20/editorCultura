@@ -1,4 +1,4 @@
-# Editor Cultura
+# TotemSync
 
 Sistema de gestão e publicação de conteúdo para totens culturais. A aplicação
 inclui editor visual, cadastro e monitoramento de equipamentos, exibição pública,
@@ -40,21 +40,84 @@ O comando inicia o servidor Laravel, worker de fila, visualização de logs e Vi
 ## Testes
 
 ```bash
-php artisan test
+composer test
 ```
 
-No Laragon, caso as extensões SQLite estejam instaladas mas desabilitadas no
-`php.ini`, a suíte pode ser executada sem alterar a configuração global:
+O comando usa um banco SQLite temporário em memória e, no Laragon, carrega as
+extensões necessárias sem alterar o `php.ini`. Nenhum dado do banco de
+desenvolvimento é modificado.
+
+A suíte cobre autenticação, temas, dashboard, gestão de páginas e conteúdos,
+editor visual, segurança e sanitização, CRUD e monitoramento de totens,
+telemetria, navegação pública, relatórios e o cenário demonstrativo.
+
+Para validar também o temporizador de inatividade e a escolha de layout do tablet:
 
 ```bash
-php -d extension=pdo_sqlite -d extension=sqlite3 vendor/bin/phpunit
+npm test
 ```
+
+Para executar somente uma classe ou um teste:
+
+```bash
+composer test -- --filter=ReportTest
+```
+
+## Dados de demonstração
+
+Em ambiente local, crie ou atualize os dados fictícios com:
+
+```bash
+composer demo
+```
+
+O cenário inclui páginas publicadas, rascunho e página inativa, totens online e
+offline e duas semanas de interações para preencher o dashboard e os
+relatórios. O comando é idempotente e pode ser repetido sem duplicar o cenário.
+
+- Login: `demo@editorcultura.test`
+- Senha: `password`
+
+O seeder possui bloqueio explícito para o ambiente de produção.
 
 ## Operação dos totens
 
-Cada navegador de totem deve ser inicializado por uma URL assinada da rota
-`totem.iniciar`. Essa URL associa a sessão ao equipamento, habilita o heartbeat
-de monitoramento e vincula as interações ao totem correto.
+O perfil padrão do TotemSync é um tablet Android na horizontal. Para preparar
+o primeiro equipamento:
+
+1. Execute `php artisan migrate` e `npm run build` após atualizar o projeto.
+2. Em **Totens**, cadastre ou edite o equipamento e escolha sua página inicial,
+   orientação **Horizontal** e o tempo de retorno por inatividade (padrão: 2 minutos).
+3. Salve e clique no ícone **Preparar tablet** na linha do equipamento.
+4. Copie o endereço gerado e abra-o no navegador do tablet em até 30 minutos.
+   O endereço associa a sessão ao totem e habilita o monitoramento e as interações.
+5. Configure o Android na horizontal e use o botão de tela cheia na exibição.
+
+A configuração é aplicada na próxima abertura/navegação da exibição. Se a página
+inicial escolhida for desativada ou excluída, o sistema usa uma página inicial
+ativa; na ausência dela, usa a primeira página ativa. Sem páginas ativas, não é
+possível gerar o endereço de inicialização.
+
+O editor identifica o layout-base como **Tablet horizontal · 1366 × 768**. A
+exibição ajusta esse layout à área disponível sem cortar o conteúdo e reserva
+uma barra para **Voltar**, **Início** e **Próximo**. O perfil vertical continua
+disponível para compatibilidade. A prévia sem associação a um totem não tem
+retorno automático por inatividade.
+
+O tablet precisa alcançar o servidor pelo mesmo endereço usado na geração do
+link. Um domínio local do Laragon não é automaticamente resolvido pelo Android;
+use um endereço de rede/domínio acessível e HTTPS na implantação. Não renomeie
+o banco existente nem a pasta do projeto para alterar a identidade visual.
+
+Ao atualizar uma instalação existente para `APP_NAME=TotemSync`, mantenha em
+`SESSION_COOKIE` o nome do cookie anterior (nesta instalação,
+`editorcultura-session`) para preservar logins e associações dos totens. As novas
+instalações usam `totemsync-session` pelo `.env.example`.
+
+Esta primeira etapa ainda usa a associação por sessão existente. Pareamento
+persistente por código/QR, cache offline, sincronização de publicações e gestão
+do Android em modo quiosque serão implementados nas etapas seguintes. Tela cheia
+do navegador não bloqueia a saída para outros aplicativos.
 
 As páginas públicas ficam em `totem/exibir/{id}`. Páginas marcadas como inativas
 não são exibidas.

@@ -94,4 +94,91 @@ class PublicTotemTest extends TestCase
 
         $this->assertNotNull($totem->fresh()->totem_ping);
     }
+
+    public function test_public_page_exposes_navigation_within_the_same_group(): void
+    {
+        $this->withoutVite();
+
+        $home = Pagina::factory()->home()->create();
+        $first = Pagina::factory()->create([
+            'grupo_slide' => 'História',
+            'ordem_slide' => 1,
+        ]);
+        $current = Pagina::factory()->create([
+            'grupo_slide' => 'História',
+            'ordem_slide' => 2,
+        ]);
+        $next = Pagina::factory()->create([
+            'grupo_slide' => 'História',
+            'ordem_slide' => 3,
+        ]);
+        Pagina::factory()->inactive()->create([
+            'grupo_slide' => 'História',
+            'ordem_slide' => 4,
+        ]);
+
+        $this->get(route('totem.exibir', $current))
+            ->assertOk()
+            ->assertViewHas('paginaAnteriorId', $first->id)
+            ->assertViewHas('proximaPaginaId', $next->id)
+            ->assertViewHas('paginaInicialId', $home->id);
+    }
+
+    public function test_unsigned_initialization_is_rejected(): void
+    {
+        $page = Pagina::factory()->create();
+        $totem = Totem::factory()->create();
+
+        $this->get(route('totem.iniciar', [
+            'totem' => $totem,
+            'pagina' => $page,
+        ]))->assertForbidden();
+    }
+
+    public function test_associated_tablet_uses_its_home_orientation_and_idle_timeout(): void
+    {
+        $globalHome = Pagina::factory()->home()->create();
+        $customHome = Pagina::factory()->create();
+        $current = Pagina::factory()->published()->create();
+        $totem = Totem::factory()->create([
+            'pagina_inicial_id' => $customHome->id,
+            'totem_orientacao' => 'landscape',
+            'totem_inatividade_segundos' => 180,
+        ]);
+
+        $this->withoutVite()->withSession(['totem_ativo_id' => $totem->id])
+            ->get(route('totem.exibir', $current))
+            ->assertOk()
+            ->assertViewHas('paginaInicialId', $customHome->id)
+            ->assertSee('data-orientacao="landscape"', false)
+            ->assertSee('data-inatividade-segundos="180"', false)
+            ->assertSee('data-inicial-url="'.route('totem.exibir', $customHome).'"', false)
+            ->assertSee('Navegação do TotemSync')
+            ->assertDontSee('touchZoneLeft', false);
+
+        $customHome->update(['pagina_ativo' => false]);
+        $this->get(route('totem.exibir', $current))->assertOk()
+            ->assertViewHas('paginaInicialId', $globalHome->id);
+    }
+
+    public function test_deleting_the_configured_home_preserves_the_tablet(): void
+    {
+        $home = Pagina::factory()->home()->create();
+        $customHome = Pagina::factory()->create();
+        $totem = Totem::factory()->create(['pagina_inicial_id' => $customHome->id]);
+        $customHome->delete();
+
+        $this->assertNull($totem->fresh()->pagina_inicial_id);
+        $this->assertSame($home->id, $totem->fresh()->paginaInicialDisponivel()->id);
+    }
+
+    public function test_preview_does_not_redirect_for_inactivity_and_clears_deleted_device(): void
+    {
+        $page = Pagina::factory()->create();
+        $this->withoutVite()->withSession(['totem_ativo_id' => 99999])
+            ->get(route('totem.exibir', $page))->assertOk()
+            ->assertSessionMissing('totem_ativo_id')
+            ->assertSee('data-inatividade-segundos="0"', false)
+            ->assertViewHas('paginaInicialId', $page->id);
+    }
 }

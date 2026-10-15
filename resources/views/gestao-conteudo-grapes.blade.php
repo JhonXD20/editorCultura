@@ -1,6 +1,6 @@
 @extends('layouts.template')
 
-@section('page_title', 'Editor visual')
+@section('page_title', 'Editor visual - TotemSync')
 @section('header_title', 'Editor visual de páginas')
 @section('header_subtitle', 'Monte o conteúdo arrastando blocos, sem precisar programar.')
 
@@ -87,8 +87,8 @@
                 <span class="visual-editor-divider" aria-hidden="true"></span>
                 <label class="sr-only" for="deviceSelector">Tamanho da tela</label>
                 <select class="visual-editor-device" id="deviceSelector">
-                    <option value="totem">Totem 1366 × 768</option>
-                    <option value="tablet">Tablet</option>
+                    <option value="totem">Tablet horizontal · 1366 × 768</option>
+                    <option value="tablet">Tablet vertical</option>
                     <option value="mobile">Celular</option>
                 </select>
                 <button type="button" class="visual-editor-icon-button" id="responsiveFitButton" title="Recalcular adaptação para esta tela" aria-label="Recalcular adaptação para esta tela">

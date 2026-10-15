@@ -1,13 +1,12 @@
 
 @extends('layouts.template')
 
-@section('page_title', 'Monitoramento - Editor Cultura')
+@section('page_title', 'Monitoramento - TotemSync')
 @section('header_title', 'Monitoramento de Totens')
 
-@section(
-    'header_subtitle',
-    $resumo['todos'] . ' dispositivos cadastrados · situação calculada pelo último contato'
-)
+@section('header_subtitle')
+    <span data-totem-total>{{ $resumo['todos'] }}</span> dispositivos cadastrados · situação calculada pelo último contato
+@endsection
 
 @section('css_custom')
     @vite('resources/css/totens.css')
@@ -21,6 +20,8 @@
     data-reabrir-formulario="{{ $errors->formTotem->any() ? '1' : '0' }}"
     data-modo-anterior="{{ old('totem_form_modo', 'criar') }}"
     data-id-anterior="{{ old('totem_id_edicao') }}"
+    data-status-url="{{ route('admin.totens.status') }}"
+    data-refresh-interval="10000"
 >
 
     {{-- FILTROS E BOTÕES --}}
@@ -34,7 +35,7 @@
                 data-filtro="todos"
                 aria-pressed="true"
             >
-                Todos ({{ $resumo['todos'] }})
+                Todos (<span data-totem-count="todos">{{ $resumo['todos'] }}</span>)
             </button>
 
             <button
@@ -43,7 +44,7 @@
                 data-filtro="online"
                 aria-pressed="false"
             >
-                Online ({{ $resumo['online'] }})
+                Online (<span data-totem-count="online">{{ $resumo['online'] }}</span>)
             </button>
 
             <button
@@ -52,7 +53,7 @@
                 data-filtro="offline"
                 aria-pressed="false"
             >
-                Offline ({{ $resumo['offline'] }})
+                Offline (<span data-totem-count="offline">{{ $resumo['offline'] }}</span>)
             </button>
 
         </div>
@@ -74,7 +75,7 @@
                 id="btnAtualizarLista"
             >
                 <i class="fas fa-sync-alt"></i>
-                Atualizar dados
+                <span>Atualizar agora</span>
             </button>
 
         </div>
@@ -94,7 +95,7 @@
                         <th>DISPOSITIVO / LOCALIZAÇÃO</th>
                         <th width="160">STATUS</th>
                         <th width="190">ÚLTIMO CONTATO</th>
-                        <th width="160" class="text-center">AÇÕES</th>
+                        <th width="200" class="text-center">AÇÕES</th>
                     </tr>
                 </thead>
 
@@ -115,7 +116,11 @@
                                 : 'Nunca';
                         @endphp
 
-                        <tr data-status="{{ $status }}">
+                        <tr
+                            data-status="{{ $status }}"
+                            data-totem-id="{{ $totem->id }}"
+                            data-ultimo-contato="{{ $totem->totem_ping?->toIso8601String() }}"
+                        >
 
                             <td>
                                 <span class="totem-id">
@@ -126,14 +131,13 @@
                             <td>
                                 <div class="dispositivo-info">
 
-                                    <div class="dispositivo-nome">
+                                    <div class="dispositivo-nome" data-totem-nome>
                                         {{ $totem->totem_nome_identificacao }}
                                     </div>
 
                                     <div class="dispositivo-localizacao">
                                         <i class="fas fa-map-marker-alt"></i>
-
-                                        {{ $totem->totem_localizacao ?: 'Localização não informada' }}
+                                        <span data-totem-localizacao>{{ $totem->totem_localizacao ?: 'Localização não informada' }}</span>
                                     </div>
 
                                 </div>
@@ -141,14 +145,14 @@
 
                             <td>
                                 @if ($estaOnline)
-                                    <span class="custom-badge badge-online">
+                                    <span class="custom-badge badge-online" data-totem-status-badge>
                                         <span class="status-dot"></span>
-                                        Online
+                                        <span data-totem-status-text>Online</span>
                                     </span>
                                 @else
-                                    <span class="custom-badge badge-offline">
+                                    <span class="custom-badge badge-offline" data-totem-status-badge>
                                         <span class="status-dot"></span>
-                                        Offline
+                                        <span data-totem-status-text>Offline</span>
                                     </span>
                                 @endif
                             </td>
@@ -159,11 +163,12 @@
                                     <span
                                         class="{{ $estaOnline ? 'contato-online' : 'contato-offline' }}"
                                         title="{{ $dataContato }}"
+                                        data-totem-contato-relativo
                                     >
                                         {{ $ultimoContato }}
                                     </span>
 
-                                    <small class="data-contato">
+                                    <small class="data-contato" data-totem-contato-data>
                                         {{ $dataContato }}
                                     </small>
 
@@ -173,6 +178,15 @@
                             <td class="text-center">
 
                                 <div class="acoes-totem">
+
+                                    <button type="button"
+                                        class="btn-action btn-acesso-totem"
+                                        title="Preparar tablet"
+                                        aria-label="Preparar tablet {{ $totem->id }}"
+                                        data-url="{{ route('admin.totens.acesso', $totem) }}"
+                                        data-nome="{{ $totem->totem_nome_identificacao }}">
+                                        <i class="fas fa-tablet-alt"></i>
+                                    </button>
 
                                     {{-- EDITAR --}}
                                     <button
@@ -218,7 +232,7 @@
 
                     @empty
 
-                        <tr>
+                        <tr data-empty-row>
                             <td colspan="5">
                                 <div class="sem-totens">
                                     <i class="fas fa-desktop"></i>
@@ -257,8 +271,11 @@
             Status baseado no último ping recebido.
         </small>
 
-        <small>
-            {{ $resumo['todos'] }} dispositivo(s) cadastrado(s)
+        <small class="totens-sync-status" id="totensSyncStatus" aria-live="polite">
+            <span class="totens-sync-dot" aria-hidden="true"></span>
+            <span data-sync-label>Atualização automática ativa</span>
+            <span aria-hidden="true">·</span>
+            <span><strong data-totem-total>{{ $resumo['todos'] }}</strong> dispositivo(s)</span>
         </small>
 
     </div>
@@ -401,6 +418,55 @@
 
             </div>
 
+            <fieldset class="totens-player-settings">
+                <legend>Exibição no tablet</legend>
+                <p class="cadastro-descricao">Preparado para Android na horizontal. As alterações entram em vigor ao abrir novamente a exibição.</p>
+
+                <div class="totens-form-group">
+                    <label for="pagina_inicial_id">Página inicial</label>
+                    <select id="pagina_inicial_id" name="pagina_inicial_id"
+                        class="totens-form-control @error('pagina_inicial_id', 'formTotem') is-invalid @enderror">
+                        <option value="">Automática (página inicial do sistema)</option>
+                        @foreach ($paginas as $opcaoPagina)
+                            <option value="{{ $opcaoPagina->id }}" @selected((string) old('pagina_inicial_id') === (string) $opcaoPagina->id)>
+                                {{ $opcaoPagina->pagina_titulo }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('pagina_inicial_id', 'formTotem')
+                        <span class="totens-erro-campo">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="totens-form-group">
+                    <label for="totem_orientacao">Orientação do conteúdo</label>
+                    <select id="totem_orientacao" name="totem_orientacao"
+                        class="totens-form-control @error('totem_orientacao', 'formTotem') is-invalid @enderror">
+                        <option value="landscape" @selected(old('totem_orientacao', 'landscape') === 'landscape')>Horizontal (padrão Android)</option>
+                        <option value="portrait" @selected(old('totem_orientacao') === 'portrait')>Vertical</option>
+                        <option value="auto" @selected(old('totem_orientacao') === 'auto')>Automática</option>
+                    </select>
+                    <small class="totens-field-help">A orientação física deve ser configurada no Android.</small>
+                    @error('totem_orientacao', 'formTotem')
+                        <span class="totens-erro-campo">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="totens-form-group">
+                    <label for="totem_inatividade_segundos">Retornar ao início após</label>
+                    <select id="totem_inatividade_segundos" name="totem_inatividade_segundos"
+                        class="totens-form-control @error('totem_inatividade_segundos', 'formTotem') is-invalid @enderror">
+                        @foreach ([0 => 'Desativado', 30 => '30 segundos', 60 => '1 minuto', 120 => '2 minutos', 180 => '3 minutos', 300 => '5 minutos', 600 => '10 minutos'] as $segundos => $rotulo)
+                            <option value="{{ $segundos }}" @selected((string) old('totem_inatividade_segundos', 120) === (string) $segundos)>{{ $rotulo }}</option>
+                        @endforeach
+                    </select>
+                    <small class="totens-field-help">O tempo reinicia a cada interação do visitante.</small>
+                    @error('totem_inatividade_segundos', 'formTotem')
+                        <span class="totens-erro-campo">{{ $message }}</span>
+                    @enderror
+                </div>
+            </fieldset>
+
             <div class="callout callout-info mb-0" id="avisoCadastroTotem">
 
                 <i class="fas fa-info-circle"></i>
@@ -442,6 +508,26 @@
 
 </dialog>
 
+<dialog id="modalAcessoTotem" class="totens-dialog" aria-labelledby="tituloAcessoTotem">
+    <div class="totens-dialog-header">
+        <h4 id="tituloAcessoTotem"><i class="fas fa-tablet-alt" aria-hidden="true"></i> Preparar tablet</h4>
+        <button type="button" class="totens-dialog-close" data-fechar-modal="modalAcessoTotem" aria-label="Fechar">&times;</button>
+    </div>
+    <div class="totens-dialog-body">
+        <p id="nomeAcessoTotem" class="text-main"></p>
+        <p class="cadastro-descricao">Abra este endereço no tablet Android para associá-lo ao equipamento e iniciar sua página inicial. O link vale por 30 minutos.</p>
+        <p id="erroAcessoTotem" class="totens-erro-requisicao" role="alert" hidden></p>
+        <label for="urlAcessoTotem">Endereço de inicialização</label>
+        <input type="url" id="urlAcessoTotem" class="totens-form-control" readonly>
+        <p class="totens-field-help mt-2">O tablet precisa acessar o mesmo servidor. Configure a tela na horizontal no Android.</p>
+        <p id="statusCopiaAcesso" class="totens-field-help" role="status"></p>
+    </div>
+    <div class="totens-dialog-footer">
+        <button type="button" class="btn-salvar-cadastro" id="btnCopiarAcessoTotem" disabled>
+            <i class="fas fa-copy" aria-hidden="true"></i> Copiar endereço
+        </button>
+    </div>
+</dialog>
 
 <form id="formExcluirTotem" method="POST" hidden>
     @csrf

@@ -1,0 +1,26 @@
+/* Símbolo compartilhado pelo login, menu e carregamento do TotemSync. */
+.totemsync-brand-mark {
+    display: inline-grid;
+    width: var(--totemsync-brand-size, 42px);
+    height: var(--totemsync-brand-size, 42px);
+    flex: 0 0 var(--totemsync-brand-size, 42px);
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 3px;
+    transform: rotate(45deg);
+}
+
+.totemsync-brand-mark > i {
+    display: block;
+    border: 1px solid var(--totemsync-brand-line, rgba(255, 255, 255, .52));
+    background: rgba(255, 255, 255, .025);
+}
+
+.totemsync-brand-mark > i:first-child {
+    border-color: var(--totemsync-brand-red, #ef3d32);
+    background: var(--totemsync-brand-red, #ef3d32);
+}
+
+.totemsync-brand-mark > i:last-child {
+    grid-column: 1 / -1;
+}

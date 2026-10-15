@@ -2,7 +2,7 @@
 
 <!-- Define um título padrão, mas permite que a view filha o sobrescreva -->
 @section('title')
-    @yield('page_title', 'Editor Cultura')
+    @yield('page_title', 'TotemSync')
 @stop
 
 <!-- Cabeçalho padronizado da página -->
@@ -14,9 +14,6 @@
         <p class="text-muted-custom mb-0 text-lowercase" style="text-transform: none !important;">
             @yield('header_subtitle', '')
         </p>
-    </div>
-    <div class="d-flex align-items-center text-green text-muted-custom">
-        <span class="mr-2 me-2" style="font-size: 10px;">●</span> SISTEMA OPERACIONAL
     </div>
 </div>
 @stop
@@ -40,7 +37,7 @@
 @section('footer')
 <div class="d-flex justify-content-between align-items-center dashboard-theme w-100" style="font-size: 0.85rem;">
     <div class="text-muted">
-        <strong>Copyright &copy; 2026 <a href="#" class="text-gold text-decoration-none">Editor Cultura</a>.</strong> Todos os direitos reservados.
+        <strong>Copyright &copy; 2026 <a href="{{ route('admin') }}" class="text-gold text-decoration-none">TotemSync</a>.</strong> Todos os direitos reservados.
     </div>
     <div class="text-muted">
         <b>Versão</b> 1.0.0

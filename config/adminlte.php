@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'Editor Cultura',
+    'title' => 'TotemSync',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -63,12 +63,13 @@ return [
     |
     */
 
-    'logo' => '<b>Editor</b> Cultura',
-    'logo_img' => 'totem/img/uploads/1790714869_logo_invent2.png',
+    'logo' => '<b>Totem</b>Sync',
+    // O painel usa o partial brand-mark; o SVG atende às demais telas do pacote.
+    'logo_img' => 'img/totemsync-mark.svg',
     'logo_img_class' => 'brand-image editor-brand-image',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Editor Cultura',
+    'logo_img_alt' => 'TotemSync',
 
     /*
     |--------------------------------------------------------------------------
@@ -112,13 +113,6 @@ return [
     'preloader' => [
         'enabled' => true,
         'mode' => 'fullscreen',
-        'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-            'alt' => 'AdminLTE Preloader Image',
-            'effect' => 'animation__shake',
-            'width' => 60,
-            'height' => 60,
-        ],
     ],
 
     /*

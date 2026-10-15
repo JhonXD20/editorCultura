@@ -1,6 +1,6 @@
 @extends('layouts.template')
 
-@section('page_title', 'Visão Geral - Editor Cultura')
+@section('page_title', 'Visão Geral - TotemSync')
 @section('header_title', 'Visão Geral')
 
 @section(

@@ -196,7 +196,18 @@ Route::middleware(['auth'])->group(function () {
                 'store',
             ])->name('store');
 
+            // Dados leves usados pela atualizacao automatica da tela.
+            Route::get('/monitoramento/tempo-real', [
+                TotemController::class,
+                'status',
+            ])->name('status');
+
             // Buscar os dados atuais do totem (JSON)
+            Route::get('/{totem}/acesso', [
+                TotemController::class,
+                'acesso',
+            ])->whereNumber('totem')->name('acesso');
+
             Route::get('/{totem}', [
                 TotemController::class,
                 'show',

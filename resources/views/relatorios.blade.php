@@ -1,7 +1,7 @@
 
 @extends('layouts.template')
 
-@section('page_title', 'Relatórios de Uso - Editor Cultura')
+@section('page_title', 'Relatórios de Uso - TotemSync')
 @section('header_title', 'Relatórios de Uso')
 @section('header_subtitle', 'Análise de engajamento e comportamento de público')
 

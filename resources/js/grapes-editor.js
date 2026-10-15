@@ -12,8 +12,8 @@ if (configElement && appElement) {
         .filter((page) => page.active)
         .map((page) => ({ id: String(page.id), label: page.title }));
     const deviceProfiles = {
-        totem: { id: 'totem', name: 'Totem', width: 1366, height: 768, widthMedia: 1366, fontScale: 1 },
-        tablet: { id: 'tablet', name: 'Tablet', width: 768, height: 1024, widthMedia: 992, fontScale: 0.85 },
+        totem: { id: 'totem', name: 'Tablet horizontal', width: 1366, height: 768, widthMedia: 1366, fontScale: 1 },
+        tablet: { id: 'tablet', name: 'Tablet vertical', width: 768, height: 1024, widthMedia: 992, fontScale: 0.85 },
         mobile: { id: 'mobile', name: 'Celular', width: 390, height: 844, widthMedia: 480, fontScale: 0.72 },
     };
 
@@ -67,7 +67,7 @@ if (configElement && appElement) {
     const starterComponents = `
         <main class="cultura-page">
             <section class="cultura-hero">
-                <p class="cultura-eyebrow">EDITOR CULTURA</p>
+                <p class="cultura-eyebrow">TOTEMSYNC</p>
                 <h1>Conte uma história que merece ser vista</h1>
                 <p class="cultura-lead">Clique duas vezes nos textos para editar. Arraste novos blocos pelo painel à esquerda.</p>
             </section>
@@ -1280,7 +1280,7 @@ if (configElement && appElement) {
         const deviceId = activeDeviceId();
 
         if (deviceId === 'totem') {
-            setStatus('O Totem é o layout-base. Escolha Tablet ou Celular para recalcular.', 'success');
+            setStatus('O tablet horizontal é o layout-base. Escolha Tablet vertical ou Celular para recalcular.', 'success');
             return;
         }
 

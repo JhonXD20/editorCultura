@@ -15,6 +15,8 @@ class TotemFactory extends Factory
     public function definition(): array
     {
         return [
+            'totem_orientacao' => 'landscape',
+            'totem_inatividade_segundos' => 120,
             'totem_nome_identificacao' =>
             'TESTE - Totem ' . fake()->unique()->bothify('??-###'),
 

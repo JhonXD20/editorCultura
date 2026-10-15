@@ -49,10 +49,14 @@ class TotemPublicController extends Controller
 
         $totemId = $request->session()->get('totem_ativo_id');
 
-        if ($totemId) {
-            Totem::whereKey($totemId)->update([
+        $totem = $totemId ? Totem::find($totemId) : null;
+
+        if ($totem) {
+            Totem::whereKey($totem->id)->update([
                 'totem_ping' => now(),
             ]);
+        } elseif ($totemId) {
+            $request->session()->forget('totem_ativo_id');
         }
 
         $proximaPaginaId = null;
@@ -95,16 +99,19 @@ class TotemPublicController extends Controller
             }
         }
 
-        $paginaInicialId = Pagina::query()
-            ->where('pagina_ativo', true)
-            ->where('pagina_tipo_layout', 'home')
-            ->value('id');
+        $paginaInicialId = ($totem
+            ? $totem->paginaInicialDisponivel()
+            : Totem::paginaInicialPadrao())?->id;
+        $orientacao = $totem?->totem_orientacao ?? 'auto';
+        $inatividadeSegundos = $totem?->totem_inatividade_segundos ?? 0;
 
         return view('totem-publico', compact(
             'pagina',
             'proximaPaginaId',
             'paginaAnteriorId',
-            'paginaInicialId'
+            'paginaInicialId',
+            'orientacao',
+            'inatividadeSegundos'
         ));
     }
 }

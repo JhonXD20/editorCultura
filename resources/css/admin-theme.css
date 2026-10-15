@@ -1,3 +1,5 @@
+@import './brand.css';
+
 /* Identidade visual compartilhada por todo o painel administrativo. */
 body.editor-cultura-admin {
     --bg-card: #ffffff;
@@ -116,6 +118,213 @@ body.editor-cultura-admin .editor-theme-toggle i {
     text-align: center;
 }
 
+/* Identidade do usuário e encerramento seguro da sessão. */
+body.editor-cultura-admin .editor-user-menu {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+}
+
+body.editor-cultura-admin .editor-user-trigger {
+    display: inline-flex;
+    min-height: 44px;
+    margin-top: 4px;
+    padding: 5px 9px 5px 6px !important;
+    align-items: center;
+    gap: 9px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .18s ease, border-color .18s ease;
+}
+
+body.editor-cultura-admin .editor-user-trigger::after {
+    display: none;
+}
+
+body.editor-cultura-admin .editor-user-trigger:hover,
+body.editor-cultura-admin .editor-user-trigger:focus-visible,
+body.editor-cultura-admin .editor-user-menu.show .editor-user-trigger {
+    border-color: var(--editor-border);
+    background: var(--editor-surface-raised);
+    outline: none;
+}
+
+body.editor-cultura-admin .editor-user-avatar {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(216, 173, 104, .42);
+    border-radius: 10px;
+    background: linear-gradient(145deg, #e4bd7d, #a96e28);
+    color: #1d160e;
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    box-shadow: 0 6px 16px rgba(132, 84, 28, .18);
+}
+
+body.editor-cultura-admin .editor-user-summary {
+    max-width: 160px;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+body.editor-cultura-admin .editor-user-summary strong {
+    overflow: hidden;
+    color: var(--editor-text);
+    font-size: .78rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.editor-cultura-admin .editor-user-summary small {
+    margin-top: 4px;
+    color: var(--editor-muted);
+    font-size: .65rem;
+}
+
+body.editor-cultura-admin .editor-user-chevron {
+    color: var(--editor-muted);
+    font-size: .62rem;
+    transition: transform .18s ease;
+}
+
+body.editor-cultura-admin .editor-user-menu.show .editor-user-chevron {
+    transform: rotate(180deg);
+}
+
+body.editor-cultura-admin .editor-user-dropdown {
+    width: min(320px, calc(100vw - 24px));
+    margin-top: 8px;
+    padding: 8px;
+    overflow: hidden;
+    border-radius: 16px;
+}
+
+body.editor-cultura-admin .editor-user-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+}
+
+body.editor-cultura-admin .editor-user-avatar-lg {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    border-radius: 13px;
+    font-size: .9rem;
+}
+
+body.editor-cultura-admin .editor-user-identity {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+body.editor-cultura-admin .editor-user-identity strong {
+    overflow: hidden;
+    color: var(--editor-text);
+    font-size: .9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.editor-cultura-admin .editor-user-identity span {
+    overflow: hidden;
+    color: var(--editor-muted);
+    font-size: .73rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.editor-cultura-admin .editor-user-session {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 6px 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--editor-border);
+    border-radius: 9px;
+    background: var(--editor-surface);
+    color: var(--editor-muted);
+    font-size: .7rem;
+}
+
+body.editor-cultura-admin .editor-user-session small {
+    margin-left: auto;
+    color: var(--editor-muted);
+}
+
+body.editor-cultura-admin .editor-user-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--editor-green);
+    box-shadow: 0 0 0 3px rgba(66, 184, 131, .12);
+}
+
+body.editor-cultura-admin .editor-user-dropdown .dropdown-divider {
+    margin: 6px;
+    border-color: var(--editor-border);
+}
+
+body.editor-cultura-admin .editor-logout-action {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    text-align: left;
+    white-space: normal;
+}
+
+body.editor-cultura-admin .editor-logout-action:hover,
+body.editor-cultura-admin .editor-logout-action:focus-visible {
+    background: rgba(239, 75, 64, .09);
+    color: var(--editor-red);
+    outline: none;
+}
+
+body.editor-cultura-admin .editor-logout-icon {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: rgba(239, 75, 64, .1);
+    color: var(--editor-red);
+}
+
+body.editor-cultura-admin .editor-logout-action > span:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+body.editor-cultura-admin .editor-logout-action strong {
+    color: var(--editor-text);
+    font-size: .8rem;
+}
+
+body.editor-cultura-admin .editor-logout-action small {
+    color: var(--editor-muted);
+    font-size: .68rem;
+}
+
 body.editor-cultura-admin .main-sidebar {
     border-right: 1px solid var(--editor-border);
     background: var(--editor-sidebar) !important;
@@ -140,13 +349,46 @@ body.editor-cultura-admin .brand-link:focus-visible {
 }
 
 body.editor-cultura-admin .brand-link .editor-brand-image {
-    width: 35px;
-    height: 35px;
-    margin: 0 12px 0 0;
-    border-radius: 9px;
-    object-fit: cover;
-    object-position: left center;
+    --totemsync-brand-size: 28px;
+    width: var(--totemsync-brand-size);
+    height: var(--totemsync-brand-size);
+    max-height: none;
+    margin: 0 17px 0 8px;
     box-shadow: none !important;
+}
+
+body.editor-cultura-admin .totemsync-preloader {
+    background: var(--editor-bg);
+    color: var(--editor-text);
+}
+
+body.editor-cultura-admin .totemsync-preloader-mark {
+    --totemsync-brand-size: 48px;
+    margin: 16px 16px 28px;
+    animation: totemsync-brand-pulse 1.6s ease-in-out infinite;
+}
+
+html[data-theme='light'] body.editor-cultura-admin .totemsync-preloader-mark {
+    --totemsync-brand-line: rgba(29, 34, 39, .42);
+}
+
+body.editor-cultura-admin .totemsync-preloader-name {
+    font-size: 1.15rem;
+    letter-spacing: .015em;
+}
+
+body.editor-cultura-admin .totemsync-preloader-label {
+    margin-top: 6px;
+    color: var(--editor-muted);
+    font-size: .78rem;
+}
+
+@keyframes totemsync-brand-pulse {
+    50% { opacity: .55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.editor-cultura-admin .totemsync-preloader-mark { animation: none; }
 }
 
 body.editor-cultura-admin .sidebar {
@@ -628,4 +870,7 @@ html[data-theme='dark'] body.editor-cultura-admin .visual-editor-shell .gjs-bloc
     body.editor-cultura-admin .custom-header { align-items: flex-start !important; gap: 12px; }
     body.editor-cultura-admin .editor-theme-toggle-label { display: none; }
     body.editor-cultura-admin .editor-theme-toggle { width: 36px; padding: 0; justify-content: center; }
+    body.editor-cultura-admin .editor-user-trigger { padding-right: 6px !important; }
+    body.editor-cultura-admin .editor-user-chevron { display: none; }
+    body.editor-cultura-admin .editor-user-menu { margin-right: 2px; }
 }

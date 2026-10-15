@@ -5,11 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\InteracaoTotem;
 use App\Models\Pagina;
 use App\Models\Totem;
-
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RelatorioController extends Controller
@@ -73,9 +72,7 @@ class RelatorioController extends Controller
         if ($inicio->greaterThan($fim)) {
 
             throw ValidationException::withMessages([
-
-                'periodo_final' =>
-                'O período final deve ser maior ou igual ao período inicial.',
+                'periodo_final' => 'O período final deve ser maior ou igual ao período inicial.',
 
             ]);
         }
@@ -91,9 +88,7 @@ class RelatorioController extends Controller
         if ($quantidadeDias > 366) {
 
             throw ValidationException::withMessages([
-
-                'periodo_inicial' =>
-                'Selecione um período de até 366 dias.',
+                'periodo_inicial' => 'Selecione um período de até 366 dias.',
 
             ]);
         }
@@ -204,12 +199,17 @@ class RelatorioController extends Controller
         |
         */
 
+        $expressaoHora = DB::connection()
+            ->getDriverName() === 'sqlite'
+                ? "CAST(strftime('%H', interacoes_totem.created_at) AS INTEGER)"
+                : 'HOUR(interacoes_totem.created_at)';
+
         $pico = (clone $toques)
             ->selectRaw(
-                'HOUR(interacoes_totem.created_at) AS hora,
-                 COUNT(*) AS total'
+                "{$expressaoHora} AS hora,
+                 COUNT(*) AS total"
             )
-            ->groupBy('hora')
+            ->groupByRaw($expressaoHora)
             ->orderByDesc('total')
             ->first();
 
@@ -254,7 +254,7 @@ class RelatorioController extends Controller
                 $paginaRetencao?->getAttribute('pagina_titulo')
                 ?: $paginaRetencao?->getAttribute('pagina_nome')
                 ?: $paginaRetencao?->getAttribute('titulo')
-                ?: 'Página #' . $retencao->pagina_id;
+                ?: 'Página #'.$retencao->pagina_id;
 
             $mediaRetencaoSegundos = (int) (
                 $retencao->media_segundos
@@ -318,7 +318,7 @@ class RelatorioController extends Controller
                 'valores' => $distribuicao
                     ->pluck('total')
                     ->map(
-                        fn($total) => (int) $total
+                        fn ($total) => (int) $total
                     )
                     ->values()
                     ->all(),
