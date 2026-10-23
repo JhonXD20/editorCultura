@@ -90,6 +90,21 @@ final class GrapesProjectGuard
         }
 
         foreach ($value as $key => $child) {
+            if (is_string($child) && in_array($key, ['content', 'component', 'components'], true)
+                && preg_match('~<\s*(?:script|iframe|svg|object|embed|form|input|style|link|meta)\b|\bon[a-z]+\s*=|(?:javascript|vbscript)\s*:~i', html_entity_decode($child, ENT_QUOTES | ENT_HTML5, 'UTF-8'))) {
+                self::fail('O documento contém HTML executável ou não permitido.');
+            }
+            if (is_string($child) && in_array($key, ['src', 'poster'], true)
+                && $child !== '' && (! str_starts_with($child, '/') || str_starts_with($child, '//') || str_contains($child, '\\'))) {
+                self::fail('Imagens e vídeos devem vir da biblioteca local.');
+            }
+            if ($key === 'style' && is_array($child)) {
+                foreach ($child as $styleValue) {
+                    if (is_string($styleValue) && preg_match('~url\s*\(|@import|expression\s*\(|javascript:|\\\\~i', $styleValue)) {
+                        self::fail('O estilo contém recursos externos ou executáveis.');
+                    }
+                }
+            }
             if (is_string($key) && preg_match('/^on[a-z]+$/i', $key)) {
                 self::fail('O documento contém comportamento executável.');
             }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\RedirectResponse;
 
 class HomeController extends Controller
@@ -17,11 +16,7 @@ class HomeController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return Renderable
-     */
+    /** Show the application dashboard. */
     public function index(): RedirectResponse
     {
         return redirect()->route('admin');

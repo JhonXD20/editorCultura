@@ -105,7 +105,7 @@ class AdminController extends Controller
         $hoje = InteracaoTotem::query()
             ->where('tipo', 'toque')
             ->whereBetween(
-                'created_at',
+                DB::raw('COALESCE(ocorrido_em, created_at)'),
                 [$inicioHoje, $agora]
             )
             ->count();
@@ -113,7 +113,7 @@ class AdminController extends Controller
         $ontem = InteracaoTotem::query()
             ->where('tipo', 'toque')
             ->whereBetween(
-                'created_at',
+                DB::raw('COALESCE(ocorrido_em, created_at)'),
                 [$inicioOntem, $fimOntem]
             )
             ->count();
@@ -140,8 +140,8 @@ class AdminController extends Controller
     ): array {
         $inicio = $agora->copy()->startOfDay();
         $expressaoHora = DB::connection()->getDriverName() === 'sqlite'
-            ? "CAST(strftime('%H', created_at) AS INTEGER)"
-            : 'HOUR(created_at)';
+            ? "CAST(strftime('%H', COALESCE(ocorrido_em, created_at)) AS INTEGER)"
+            : 'HOUR(COALESCE(ocorrido_em, created_at))';
 
         $registros = DB::table('interacoes_totem')
             ->selectRaw(
@@ -150,7 +150,7 @@ class AdminController extends Controller
             )
             ->where('tipo', 'toque')
             ->whereBetween(
-                'created_at',
+                DB::raw('COALESCE(ocorrido_em, created_at)'),
                 [$inicio, $agora]
             )
             ->groupByRaw($expressaoHora)
@@ -187,15 +187,15 @@ class AdminController extends Controller
 
         $registros = DB::table('interacoes_totem')
             ->selectRaw(
-                'DATE(created_at) AS dia,
+                'DATE(COALESCE(ocorrido_em, created_at)) AS dia,
                  COUNT(*) AS total'
             )
             ->where('tipo', 'toque')
             ->whereBetween(
-                'created_at',
+                DB::raw('COALESCE(ocorrido_em, created_at)'),
                 [$inicioSemana, $agora]
             )
-            ->groupByRaw('DATE(created_at)')
+            ->groupByRaw('DATE(COALESCE(ocorrido_em, created_at))')
             ->pluck('total', 'dia');
 
         $nomesDias = [
@@ -242,11 +242,11 @@ class AdminController extends Controller
         $inicioSemana = $agora->copy()
             ->startOfWeek(Carbon::MONDAY);
 
-        $registros = InteracaoTotem::query()
+        $registros = DB::table('interacoes_totem')
             ->where('tipo', 'tempo_pagina')
             ->whereNotNull('pagina_id')
             ->whereBetween(
-                'created_at',
+                DB::raw('COALESCE(ocorrido_em, created_at)'),
                 [$inicioSemana, $agora]
             )
             ->select('pagina_id')
@@ -268,7 +268,7 @@ class AdminController extends Controller
             ->keyBy('id');
 
         $maiorQuantidade = (int) (
-            $registros->first()?->total ?? 0
+            $registros->first()->total
         );
 
         return $registros->map(
@@ -317,7 +317,7 @@ class AdminController extends Controller
 
         return $offline
             ->sortBy(
-                fn (Totem $totem): int => $totem->totem_ping?->timestamp ?? 0
+                fn (Totem $totem): int => $totem->totem_ping ? $totem->totem_ping->timestamp : 0
             )
             ->take(5)
             ->map(

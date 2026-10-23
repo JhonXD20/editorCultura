@@ -4,10 +4,12 @@
     "type": "module",
     "scripts": {
         "test": "node --test tests/JavaScript/*.test.js",
+        "test:e2e": "playwright test",
         "build": "vite build",
         "dev": "vite"
     },
     "devDependencies": {
+        "@playwright/test": "^1.64.1",
         "@popperjs/core": "^2.11.6",
         "@tailwindcss/vite": "^4.0.0",
         "bootstrap": "^5.2.3",
@@ -19,6 +21,7 @@
     },
     "dependencies": {
         "chart.js": "^4.5.1",
-        "grapesjs": "0.23.6"
+        "grapesjs": "0.23.6",
+        "qrcode": "^1.5.4"
     }
 }

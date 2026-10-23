@@ -9,6 +9,9 @@
             'type' => $type,
             'message' => (string) $message,
         ])->values();
+    if ($errors->any()) {
+        $adminNotifications->push(['type' => 'danger', 'message' => implode("\n", $errors->all())]);
+    }
 
 @endphp
 
@@ -34,6 +37,16 @@
             </div>
             <div class="modal-body">
                 <p class="admin-notice-message mb-0" id="adminNoticeMessage"></p>
+                <div id="adminNoticeChallenge" class="mt-3" hidden>
+                    <div class="form-group">
+                        <label for="adminNoticeEmail">Digite o e-mail do usuário para confirmar</label>
+                        <input id="adminNoticeEmail" class="form-control" type="email" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="adminNoticePassword">Sua senha atual</label>
+                        <input id="adminNoticePassword" class="form-control" type="password" autocomplete="current-password">
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" id="adminNoticeCancel" data-dismiss="modal">

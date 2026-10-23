@@ -1,0 +1,175 @@
+name: CI e produção
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: totemsync_test
+          MYSQL_USER: totemsync
+          MYSQL_PASSWORD: testing-password
+          MYSQL_ROOT_PASSWORD: root-testing-password
+        ports: [3306:3306]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot-testing-password"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: totemsync_test
+      DB_USERNAME: totemsync
+      DB_PASSWORD: testing-password
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: bcmath, dom, fileinfo, gd, intl, mbstring, pdo_mysql, xml, zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: composer install --no-interaction --prefer-dist
+      - run: npm ci
+      - run: composer validate --strict
+      - run: vendor/bin/pint --test
+      - run: php artisan migrate --force
+      - run: vendor/bin/phpstan analyse --no-progress
+      - run: php artisan test
+      - run: npm test
+      - run: npm run build
+
+  browser:
+    runs-on: ubuntu-24.04
+    needs: quality
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: totemsync_e2e
+          MYSQL_USER: totemsync
+          MYSQL_PASSWORD: testing-password
+          MYSQL_ROOT_PASSWORD: root-testing-password
+        ports: [3306:3306]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot-testing-password"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_DATABASE: totemsync_e2e
+      DB_USERNAME: totemsync
+      DB_PASSWORD: testing-password
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      E2E_DB_CONNECTION: mysql
+      E2E_DB_DATABASE: totemsync_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: bcmath, dom, fileinfo, gd, intl, mbstring, pdo_mysql, xml, zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: composer install --no-interaction --prefer-dist
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+            storage/logs/e2e-server.log
+
+  images:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    needs: [quality, browser]
+    env:
+      REGISTRY_OWNER: ${{ github.repository_owner }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "REGISTRY_OWNER=${REGISTRY_OWNER,,}" >> "$GITHUB_ENV"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: app
+          build-args: APP_RELEASE=${{ github.sha }}
+          push: true
+          tags: ghcr.io/${{ env.REGISTRY_OWNER }}/totemsync-app:${{ github.sha }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web
+          build-args: APP_RELEASE=${{ github.sha }}
+          push: true
+          tags: ghcr.io/${{ env.REGISTRY_OWNER }}/totemsync-web:${{ github.sha }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/backup/Dockerfile
+          push: true
+          tags: ghcr.io/${{ env.REGISTRY_OWNER }}/totemsync-backup:${{ github.sha }}
+
+  deploy:
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    needs: images
+    environment: production
+    concurrency: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PATH: ${{ secrets.VPS_PATH }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      REGISTRY_USER: ${{ github.actor }}
+      REGISTRY_OWNER: ${{ github.repository_owner }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          REGISTRY_OWNER=${REGISTRY_OWNER,,}
+          install -m 700 -d ~/.ssh
+          printf '%s' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          test -n "$VPS_PATH" && test "$VPS_PATH" != / && test "$VPS_PATH" != /home
+          tar -czf infrastructure.tar.gz compose.production.yaml docker/certbot scripts/deploy-production.sh scripts/rollback-production.sh
+          scp infrastructure.tar.gz "$VPS_USER@$VPS_HOST:$VPS_PATH/infrastructure.tar.gz"
+          printf '%s' "$GHCR_TOKEN" | ssh "$VPS_USER@$VPS_HOST" "docker login ghcr.io -u '$REGISTRY_USER' --password-stdin"
+          ssh "$VPS_USER@$VPS_HOST" "cd '$VPS_PATH' && tar -xzf infrastructure.tar.gz && APP_IMAGE='ghcr.io/$REGISTRY_OWNER/totemsync-app:$GITHUB_SHA' WEB_IMAGE='ghcr.io/$REGISTRY_OWNER/totemsync-web:$GITHUB_SHA' BACKUP_IMAGE='ghcr.io/$REGISTRY_OWNER/totemsync-backup:$GITHUB_SHA' sh scripts/deploy-production.sh"

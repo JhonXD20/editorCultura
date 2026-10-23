@@ -1,0 +1,45 @@
+import { expect, test } from '@playwright/test';
+
+test('avaliação opcional pode ser pulada e reenviada após desconexão', async ({ page, context }, testInfo) => {
+    test.setTimeout(90_000);
+    await page.goto('/login');
+    await page.getByLabel('E-mail', { exact: true }).fill('demo@editorcultura.test');
+    await page.getByLabel('Senha', { exact: true }).fill('password');
+    await page.getByRole('button', { name: /entrar/i }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+    const csrf = await page.locator('meta[name="csrf-token"]').getAttribute('content');
+    const name = `Avaliação ${testInfo.project.name} ${Date.now()}`;
+    const created = await page.request.post('/totens', { form: { _token: csrf, totem_nome_identificacao: name, questionario_ativo: '1' } });
+    expect(created.ok()).toBeTruthy();
+    const list = await (await page.request.get('/totens/monitoramento/tempo-real')).json();
+    const totem = list.totens.find((value) => value.nome === name);
+    expect((await page.request.post('/pairing', { form: { _token: csrf, totem_id: totem.id } })).ok()).toBeTruthy();
+    await page.goto('/totem/exibir/1');
+    await expect(page.locator('#playerSyncStatus')).toContainText('disponível offline', { timeout: 60_000 });
+    const open = page.getByRole('button', { name: 'Avaliar experiência' });
+    const dialog = page.getByRole('dialog', { name: 'Como foi sua experiência?' });
+    const triggerBounds = await open.boundingBox();
+    const navBounds = await page.locator('.totem-navigation-links').boundingBox();
+    const overlaps = triggerBounds.x < navBounds.x + navBounds.width && triggerBounds.x + triggerBounds.width > navBounds.x
+        && triggerBounds.y < navBounds.y + navBounds.height && triggerBounds.y + triggerBounds.height > navBounds.y;
+    expect(overlaps).toBe(false);
+    await open.click();
+    await page.screenshot({ path: testInfo.outputPath('questionnaire.png'), fullPage: true });
+    await dialog.getByRole('button', { name: 'Pular e voltar' }).click();
+    await expect(dialog).not.toBeVisible();
+    await open.click();
+    await dialog.getByRole('button', { name: 'Sair da avaliação' }).click();
+    await expect(dialog).not.toBeVisible();
+    await open.click();
+    await context.setOffline(true);
+    await dialog.locator('fieldset').first().getByRole('radio', { name: 'Concordo totalmente', exact: true }).check();
+    await dialog.getByRole('checkbox').check();
+    await dialog.getByRole('button', { name: 'Enviar avaliação' }).click();
+    await expect(page.locator('#questionnaireStatus')).toContainText('guardada neste dispositivo');
+    const response = page.waitForResponse((value) => value.url().endsWith('/device/questionnaire') && value.status() === 201);
+    await context.setOffline(false);
+    await response;
+    await expect(page.locator('#questionnaireStatus')).toContainText('Avaliação enviada');
+    await dialog.getByRole('button', { name: 'Pular e voltar' }).click();
+    await expect(dialog).not.toBeVisible();
+});

@@ -27,15 +27,16 @@ class VisualEditorTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->putJson(route('editor-visual.save', $pagina), [
                 'project_data' => $this->safeProject(),
+                'base_version' => $pagina->pagina_versao_rascunho,
             ])
             ->assertOk()
-            ->assertJson(['success' => true]);
+            ->assertJson(['success' => true, 'draft_version' => 2]);
 
         $pagina->refresh();
 
-        $this->assertSame('grapesjs-0.23', $pagina->editor_version);
-        $this->assertSame('main', $pagina->editor_project_data['pages'][0]['component']['tagName']);
-        $this->assertNull($pagina->published_at);
+        $this->assertSame('grapesjs-0.23', $pagina->pagina_versao_editor);
+        $this->assertSame('main', $pagina->pagina_dados_editor['pages'][0]['component']['tagName']);
+        $this->assertNull($pagina->pagina_publicada_em);
     }
 
     public function test_authenticated_user_can_open_the_visual_editor(): void
@@ -63,6 +64,7 @@ class VisualEditorTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->putJson(route('editor-visual.save', $pagina), [
                 'project_data' => $project,
+                'base_version' => $pagina->pagina_versao_rascunho,
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('project_data');
@@ -77,21 +79,23 @@ class VisualEditorTest extends TestCase
                 'project_data' => $this->safeProject(),
                 'html' => '<main><h1 onclick="alert(1)">Memória</h1><button data-cultura-navigation="1" data-page-id="2"><i class="fas fa-home" aria-hidden="true"></i><span>Início</span></button><script>alert(2)</script><img src="/imagem.jpg" onerror="alert(3)"></main>',
                 'css' => '.titulo { color: #174b35; font-size: 40px; } @media (max-width: 480px) { .titulo { font-size: 24px; width: 90%; } }',
+                'base_version' => $pagina->pagina_versao_rascunho,
             ])
             ->assertOk()
-            ->assertJson(['success' => true]);
+            ->assertJson(['success' => true, 'draft_version' => 2, 'publication_version' => 1])
+            ->assertJsonStructure(['published_at']);
 
         $pagina->refresh();
 
-        $this->assertNotNull($pagina->published_at);
-        $this->assertStringContainsString('Memória', $pagina->published_html);
-        $this->assertStringContainsString('/imagem.jpg', $pagina->published_html);
-        $this->assertStringContainsString('fas fa-home', $pagina->published_html);
-        $this->assertStringContainsString('data-cultura-navigation="1"', $pagina->published_html);
-        $this->assertStringNotContainsString('<script', $pagina->published_html);
-        $this->assertStringNotContainsString('onclick', $pagina->published_html);
-        $this->assertStringNotContainsString('onerror', $pagina->published_html);
-        $this->assertStringContainsString('@media (max-width: 480px)', $pagina->published_css);
+        $this->assertNotNull($pagina->pagina_publicada_em);
+        $this->assertStringContainsString('Memória', $pagina->pagina_html_publicado);
+        $this->assertStringContainsString('/imagem.jpg', $pagina->pagina_html_publicado);
+        $this->assertStringContainsString('fas fa-home', $pagina->pagina_html_publicado);
+        $this->assertStringContainsString('data-cultura-navigation="1"', $pagina->pagina_html_publicado);
+        $this->assertStringNotContainsString('<script', $pagina->pagina_html_publicado);
+        $this->assertStringNotContainsString('onclick', $pagina->pagina_html_publicado);
+        $this->assertStringNotContainsString('onerror', $pagina->pagina_html_publicado);
+        $this->assertStringContainsString('@media (max-width: 480px)', $pagina->pagina_css_publicado);
     }
 
     public function test_publish_rejects_css_with_external_resources(): void
@@ -103,11 +107,12 @@ class VisualEditorTest extends TestCase
                 'project_data' => $this->safeProject(),
                 'html' => '<main>Conteúdo</main>',
                 'css' => '.hero { background-image: url("https://example.com/tracker.png"); }',
+                'base_version' => $pagina->pagina_versao_rascunho,
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('publication');
 
-        $this->assertNull($pagina->fresh()->published_at);
+        $this->assertNull($pagina->fresh()->pagina_publicada_em);
     }
 
     public function test_public_page_renders_the_published_version(): void
@@ -116,12 +121,12 @@ class VisualEditorTest extends TestCase
 
         $pagina = $this->pagina();
         $pagina->update([
-            'published_html' => '<main><h1>Versão publicada</h1></main>',
-            'published_css' => 'h1 { color: #174b35; }',
-            'published_at' => now(),
+            'pagina_html_publicado' => '<main><h1>Versão publicada</h1></main>',
+            'pagina_css_publicado' => 'h1 { color: #174b35; }',
+            'pagina_publicada_em' => now(),
         ]);
 
-        $this->get(route('totem.exibir', $pagina))
+        $this->actingAs(User::factory()->create())->get(route('gestao-conteudo.preview', $pagina))
             ->assertOk()
             ->assertSee('Versão publicada')
             ->assertSee('grapes-published-page', false)
@@ -134,12 +139,12 @@ class VisualEditorTest extends TestCase
 
         $pagina = $this->pagina();
         $pagina->update([
-            'published_html' => '<main data-cultura-responsive-version="2"><h1>Responsive</h1></main>',
-            'published_css' => '@media (max-width: 480px) { h1 { width: 90%; } }',
-            'published_at' => now(),
+            'pagina_html_publicado' => '<main data-cultura-responsive-version="2"><h1>Responsive</h1></main>',
+            'pagina_css_publicado' => '@media (max-width: 480px) { h1 { width: 90%; } }',
+            'pagina_publicada_em' => now(),
         ]);
 
-        $this->get(route('totem.exibir', $pagina))
+        $this->actingAs(User::factory()->create())->get(route('gestao-conteudo.preview', $pagina))
             ->assertOk()
             ->assertSee('Responsive')
             ->assertSee('data-responsive-version="2"', false);

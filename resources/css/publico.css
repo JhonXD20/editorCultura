@@ -344,6 +344,26 @@ body {
     z-index: 20;
 }
 
+.is-section-navigation .totem-sequence-control { display: none; }
+.totem-touch-hint {
+    position: fixed;
+    left: 50%;
+    top: max(16px, env(safe-area-inset-top));
+    transform: translateX(-50%);
+    max-width: min(90vw, 560px);
+    padding: 12px 18px;
+    border-radius: 10px;
+    background: #20252aee;
+    color: #fff;
+    font: 16px/1.4 Arial, sans-serif;
+    text-align: center;
+    pointer-events: none;
+    z-index: 100;
+}
+.totem-touch-hint[hidden] { display: none; }
+[data-cultura-navigation="1"] { cursor: pointer; }
+[data-cultura-navigation="1"]:focus-visible { outline: 3px solid #c99f48; outline-offset: 3px; }
+
 .totem-player-brand {
     color: #f5f5f5;
     font-size: 17px;
@@ -454,3 +474,20 @@ body {
 @media (prefers-reduced-motion: reduce) {
     .totem-nav-button { transition: none; }
 }
+/* Avaliação opcional; o diálogo permanece fora da área de navegação por toque. */
+#openQuestionnaire { position: fixed; right: 78px; bottom: 10px; z-index: 10001; font: 600 14px system-ui; }
+#visitorQuestionnaire { width: min(680px, 94vw); max-height: 88vh; box-sizing: border-box; padding: 24px; border: 0; border-radius: 16px; background: #fff; color: #20252a; font: 16px/1.5 system-ui; }
+#visitorQuestionnaire::backdrop { background: rgb(0 0 0 / 65%); }
+#visitorQuestionnaire h2 { margin: 0 0 12px; font-size: 24px; }
+#visitorQuestionnaire fieldset { margin: 16px 0; border: 1px solid #b0b8bf; border-radius: 8px; padding: 12px; }
+#visitorQuestionnaire legend { font-weight: 600; padding: 0 4px; }
+.questionnaire-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.questionnaire-options label { display: flex; align-items: center; gap: 5px; padding: 10px; min-height: 44px; min-width: 44px; box-sizing: border-box; background: #f0f2f4; border-radius: 6px; cursor: pointer; }
+.questionnaire-options label:has(input:checked) { outline: 2px solid #72501c; background: #f6e4c2; }
+.questionnaire-consent { display: block; padding: 12px 0; }
+.questionnaire-actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.questionnaire-actions button { padding: 12px 16px; border: 1px solid #72501c; border-radius: 8px; background: #fff; color: #35270f; font: 600 16px system-ui; cursor: pointer; }
+.questionnaire-actions button[type=submit] { background: #e7c07c; }
+.questionnaire-close { position: sticky; top: 0; float: right; margin: 0 0 12px 12px; min-height: 44px; padding: 8px 12px; border: 1px solid #72501c; border-radius: 8px; background: #fff; color: #35270f; font: 600 14px system-ui; cursor: pointer; z-index: 1; }
+#visitorQuestionnaire h2 { clear: both; }
+@media (max-width: 1000px) { #openQuestionnaire { right: 12px; bottom: 84px; font-size: 14px; max-width: none; } }

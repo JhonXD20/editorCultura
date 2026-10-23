@@ -1,4 +1,6 @@
-document.addEventListener('DOMContentLoaded', () => {
+import { onAdminPage } from './admin-lifecycle';
+
+onAdminPage(() => {
     const manager = document.getElementById('contentManager');
 
     if (!manager) {
@@ -19,7 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
         .toLocaleLowerCase('pt-BR')
         .trim();
 
-    const openCreateDialog = () => {
+    const sectionField = document.getElementById('newPageSection');
+    const pageTypeField = document.getElementById('newPageType');
+    const syncSectionField = () => {
+        if (!sectionField) return;
+        sectionField.disabled = pageTypeField?.value === 'home';
+        if (sectionField.disabled) sectionField.value = '';
+    };
+    pageTypeField?.addEventListener('change', syncSectionField);
+    syncSectionField();
+
+    const openCreateDialog = (event) => {
+        const section = event?.currentTarget?.dataset.createSection;
+        if (section) {
+            pageTypeField.value = 'interna';
+            sectionField.value = section;
+            syncSectionField();
+        }
         if (!dialog) {
             return;
         }
@@ -73,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 shown += 1;
             }
         });
+        document.querySelectorAll('[data-section-heading]').forEach((heading) => {
+            heading.hidden = !pageRows.some((row) => !row.hidden && row.dataset.pageSection === heading.dataset.sectionHeading);
+        });
 
         if (visibleCount) {
             visibleCount.textContent = `${shown} ${shown === 1 ? 'exibida' : 'exibidas'}`;
@@ -113,19 +134,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!confirmed) return;
 
-            form.querySelector('button[type="submit"]')?.setAttribute('disabled', 'disabled');
-            form.submit();
+            await window.AdminNavigation?.submit(form);
         });
     });
 
-    const createForm = document.getElementById('createPageForm');
-    const createSubmit = document.getElementById('createPageSubmit');
-
-    createForm?.addEventListener('submit', () => {
-        if (createSubmit) {
-            createSubmit.disabled = true;
-            createSubmit.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Criando…';
-        }
+    document.querySelectorAll('[data-section-order-form]').forEach((form) => {
+        const list = form.querySelector('[data-section-order-list]');
+        const save = form.querySelector('[data-save-section-order]');
+        if (!save) return;
+        let dragging;
+        const changed = () => {
+            save.disabled = false;
+            form.querySelector('[data-section-order-status]').textContent = 'Ordem alterada. Clique em Salvar ordem para aplicar.';
+        };
+        list.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-move-page]');
+            if (!button) return;
+            const item = button.closest('[data-section-page]');
+            const next = Number(button.dataset.movePage) < 0 ? item.previousElementSibling : item.nextElementSibling;
+            if (!next) return;
+            if (Number(button.dataset.movePage) < 0) next.before(item);
+            else next.after(item);
+            changed();
+            button.focus();
+        });
+        list.addEventListener('dragstart', (event) => {
+            dragging = event.target.closest('[data-section-page]');
+            if (dragging) { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', dragging.dataset.sectionPage); }
+        });
+        list.addEventListener('dragover', (event) => { if (dragging) event.preventDefault(); });
+        list.addEventListener('drop', (event) => {
+            event.preventDefault();
+            const target = event.target.closest('[data-section-page]');
+            if (!dragging || !target || dragging === target) return;
+            const before = event.clientY < target.getBoundingClientRect().top + target.offsetHeight / 2;
+            if (before) target.before(dragging);
+            else target.after(dragging);
+            changed();
+        });
+        list.addEventListener('dragend', () => { dragging = null; });
     });
 
     applyFilters();

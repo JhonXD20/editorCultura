@@ -20,11 +20,15 @@
 
 <!-- Área central onde as views filhas vão injetar o conteúdo -->
 @section('content')
+    <div id="adminMainContent" data-admin-content tabindex="-1">
+    <noscript><div class="alert alert-warning">Ative o JavaScript para usar as confirmações e atualizações do painel com segurança.</div></noscript>
     @yield('conteudo')
+    </div>
     @include('partials.admin-notifications')
 @stop
 
 @section('content_top_nav_right')
+<li class="nav-item"><a class="nav-link" href="{{ route('notifications.index') }}" aria-label="Notificações"><i class="fas fa-bell" aria-hidden="true"></i><span class="badge badge-warning">{{ auth()->user()->unreadNotifications()->count() }}</span></a></li>
 <li class="nav-item">
     <button type="button" class="nav-link editor-theme-toggle" data-theme-toggle aria-label="Alternar tema">
         <i class="fas fa-moon" data-theme-icon aria-hidden="true"></i>
@@ -50,9 +54,6 @@
 @include('partials.theme-loader')
 @vite('resources/css/admin-notifications.css')
 <!-- Google Fonts Globais -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 
 <style>
     /* ==== VARIÁVEIS GLOBAIS (MODO CLARO) ==== */
@@ -162,7 +163,7 @@
 
 <!-- JAVASCRIPT GLOBAL -->
 @section('js')
-@vite(['resources/js/theme.js', 'resources/js/admin-notifications.js'])
+@vite(['resources/js/theme.js', 'resources/js/admin-notifications.js', 'resources/js/admin-navigation.js'])
 <!-- Ponto de injeção para as views filhas mandarem JS específico (como o Chart.js) -->
 @yield('js_custom')
 @stop

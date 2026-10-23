@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,6 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(DemoSeeder::class);
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn('A carga cultural de desenvolvimento só pode ser executada em local/testing.');
+
+            return;
+        }
+
+        DB::transaction(function (): void {
+            $this->call([
+                UserSeeder::class,
+                CulturalMediaSeeder::class,
+                CulturalContentSeeder::class,
+                TotemSeeder::class,
+            ]);
+        });
     }
 }

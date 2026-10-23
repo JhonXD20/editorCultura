@@ -12,6 +12,9 @@
 @section('conteudo')
 
 <div class="dashboard-theme relatorios-page pb-4">
+    @if($picoHistoricoIncompleto)
+        <div class="alert alert-info" role="status">Este período inclui dados consolidados por dia. Os totais foram preservados; o pico por horário não está disponível para o período completo.</div>
+    @endif
 
     @if ($errors->any())
         <div class="alert alert-danger alert-dismissible">

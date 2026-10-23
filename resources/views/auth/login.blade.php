@@ -57,6 +57,7 @@
 
                 <form method="POST" action="{{ route('login') }}" class="editor-login-form">
                     @csrf
+                    @if(session('status'))<p role="status">{{ session('status') }}</p>@endif
 
                     <div class="editor-login-field">
                         <label for="email">E-mail</label>

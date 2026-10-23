@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pagina;
+use App\Models\PairingCode;
 use App\Models\Totem;
+use App\Support\Audit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
 class TotemController extends Controller
@@ -24,13 +25,11 @@ class TotemController extends Controller
             'todos' => $totens->count(),
 
             'online' => $totens->filter(
-                fn($totem) =>
-                $totem->status_monitoramento === 'online'
+                fn ($totem) => $totem->status_monitoramento === 'online'
             )->count(),
 
             'offline' => $totens->filter(
-                fn($totem) =>
-                $totem->status_monitoramento === 'offline'
+                fn ($totem) => $totem->status_monitoramento === 'offline'
             )->count(),
         ];
 
@@ -68,6 +67,8 @@ class TotemController extends Controller
                     'editar' => route('admin.totens.update', $totem),
                     'excluir' => route('admin.totens.destroy', $totem),
                     'acesso' => route('admin.totens.acesso', $totem),
+                    'recarregar' => route('admin.totens.reload', $totem),
+                    'revogar' => route('admin.totens.revoke', $totem),
                 ],
             ];
         });
@@ -116,19 +117,19 @@ class TotemController extends Controller
         return response()->json([
             'id' => $totem->id,
 
-            'totem_nome_identificacao' =>
-            $totem->totem_nome_identificacao,
+            'totem_nome_identificacao' => $totem->totem_nome_identificacao,
 
-            'totem_localizacao' =>
-            $totem->totem_localizacao,
+            'totem_localizacao' => $totem->totem_localizacao,
             'pagina_inicial_id' => $totem->pagina_inicial_id,
             'totem_orientacao' => $totem->totem_orientacao,
             'totem_inatividade_segundos' => $totem->totem_inatividade_segundos,
+            'questionario_ativo' => $totem->questionario_ativo,
         ]);
     }
 
     public function acesso(Totem $totem): JsonResponse
     {
+        $this->authorize('pair-device');
         $pagina = $totem->paginaInicialDisponivel();
 
         if (! $pagina) {
@@ -137,16 +138,43 @@ class TotemController extends Controller
             ], 422);
         }
 
-        $expiraEm = now()->addMinutes(30);
+        $expiraEm = now()->addMinutes(10);
+        do {
+            $codigo = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        } while (PairingCode::where('hash_codigo', hash('sha256', $codigo))->exists());
+        PairingCode::where('totem_id', $totem->id)->whereNull('usado_em')->delete();
+        PairingCode::create([
+            'totem_id' => $totem->id,
+            'criado_por' => request()->user()->id,
+            'hash_codigo' => hash('sha256', $codigo),
+            'expira_em' => $expiraEm,
+        ]);
+        Audit::record('device.pairing_code.created', $totem, ['expira_em' => $expiraEm->toIso8601String()]);
 
         return response()->json([
-            'url' => URL::temporarySignedRoute('totem.iniciar', $expiraEm, [
-                'totem' => $totem,
-                'pagina' => $pagina,
-            ]),
+            'url' => route('device.pair.form', ['code' => $codigo]),
+            'code' => $codigo,
             'expira_em' => $expiraEm->toIso8601String(),
             'pagina' => $pagina->pagina_titulo,
         ])->header('Cache-Control', 'no-store');
+    }
+
+    public function reload(Totem $totem): JsonResponse
+    {
+        $this->authorize('administer');
+        $totem->update(['totem_recarga_solicitada_em' => now()]);
+        Audit::record('device.content_reload_requested', $totem);
+
+        return response()->json(['message' => 'Recarregamento solicitado.', 'requested_at' => $totem->totem_recarga_solicitada_em]);
+    }
+
+    public function revoke(Totem $totem): JsonResponse
+    {
+        $this->authorize('administer');
+        $count = $totem->credentials()->whereNull('revogado_em')->update(['revogado_em' => now()]);
+        Audit::record('device.credentials.revoked', $totem, ['count' => $count]);
+
+        return response()->json(['message' => 'Credenciais revogadas.', 'revoked' => $count]);
     }
 
     /**
@@ -194,6 +222,7 @@ class TotemController extends Controller
                 Rule::exists('paginas', 'id')->where('pagina_ativo', true),
             ],
             'totem_orientacao' => ['sometimes', 'required', Rule::in(['landscape', 'portrait', 'auto'])],
+            'questionario_ativo' => ['sometimes', 'required', 'boolean'],
             'totem_inatividade_segundos' => [
                 'sometimes', 'required', 'integer', Rule::in([0, 30, 60, 120, 180, 300, 600]),
             ],

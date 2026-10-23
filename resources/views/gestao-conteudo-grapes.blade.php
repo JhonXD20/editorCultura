@@ -9,13 +9,23 @@
         $editorConfig = [
             'pageId' => $pagina->id,
             'pageTitle' => $pagina->pagina_titulo,
-            'projectData' => $pagina->editor_project_data,
+            'projectData' => $pagina->pagina_dados_editor,
             'saveUrl' => route('editor-visual.save', $pagina),
+            'submitUrl' => route('editor-visual.submit', $pagina),
             'publishUrl' => route('editor-visual.publish', $pagina),
             'uploadUrl' => route('editor-visual.upload'),
-            'publicUrl' => route('totem.exibir', $pagina),
+            'publicUrl' => route('gestao-conteudo.preview', $pagina),
+            'draftVersion' => $pagina->pagina_versao_rascunho,
+            'canPublish' => auth()->user()->can('publish-content'),
+            'mediaAssets' => \App\Models\MediaAsset::where('tipo', 'image')->latest()->get()->map(fn ($asset) => [
+                'src' => '/storage/'.$asset->caminho, 'name' => $asset->nome_original, 'type' => 'image',
+            ]),
+            'videoAssets' => \App\Models\MediaAsset::where('tipo', 'video')->latest()->get()->map(fn ($asset) => [
+                'id' => '/storage/'.$asset->caminho, 'label' => $asset->nome_original,
+            ]),
             'csrfToken' => csrf_token(),
-            'publishedAt' => $pagina->published_at?->format('d/m/Y H:i'),
+            'publishedAt' => $pagina->pagina_publicada_em?->format('d/m/Y H:i'),
+            'sections' => $secoes->map(fn ($item) => ['id' => $item->id, 'label' => $item->nome])->values(),
             'pages' => $paginas->map(fn ($item) => [
                 'id' => $item->id,
                 'title' => $item->pagina_titulo,
@@ -26,7 +36,7 @@
     @endphp
 
     <div class="visual-editor-shell is-focus-mode" id="visualEditorApp">
-        <div class="visual-editor-notice {{ $pagina->editor_project_data ? 'd-none' : '' }}" id="firstDraftNotice">
+        <div class="visual-editor-notice {{ $pagina->pagina_dados_editor ? 'd-none' : '' }}" id="firstDraftNotice">
             Esta página ainda usa o editor anterior na exibição pública. O novo modelo só ficará visível depois que você clicar em <strong>Publicar</strong>.
         </div>
 
@@ -101,9 +111,12 @@
                     <i class="fas fa-compress-alt mr-1" aria-hidden="true"></i>
                     <span>Sair da tela inteira</span>
                 </button>
-                <a class="btn btn-outline-secondary btn-sm" href="{{ route('totem.exibir', $pagina) }}" target="_blank" rel="noopener">
+                <a class="btn btn-outline-secondary btn-sm" href="{{ route('gestao-conteudo.preview', $pagina) }}" target="_blank" rel="noopener">
                     <i class="fas fa-eye mr-1" aria-hidden="true"></i> Visualizar
                 </a>
+                <a class="btn btn-outline-secondary btn-sm" href="{{ route('revisions.index', $pagina) }}">Histórico</a>
+                <button class="btn btn-warning btn-sm" id="downloadConflictCopy" type="button" hidden>Baixar cópia local</button>
+                @can('administer')
                 <form
                     method="POST"
                     action="{{ route('gestao-conteudo.destroy', $pagina) }}"
@@ -123,11 +136,13 @@
                         <i class="fas fa-trash-alt mr-1" aria-hidden="true"></i><span>Excluir página</span>
                     </button>
                 </form>
+                @endcan
                 <button type="button" class="btn btn-outline-primary btn-sm" id="saveDraftButton">
                     <i class="fas fa-save mr-1" aria-hidden="true"></i> Salvar rascunho
                 </button>
                 <button type="button" class="btn btn-success btn-sm" id="publishButton">
-                    <i class="fas fa-cloud-upload-alt mr-1" aria-hidden="true"></i> Publicar
+                    <i class="fas fa-cloud-upload-alt mr-1" aria-hidden="true"></i>
+                    {{ auth()->user()->can('publish-content') ? 'Publicar' : 'Enviar para revisão' }}
                 </button>
             </div>
         </div>
@@ -266,8 +281,17 @@
                             </div>
 
                             <div class="cultura-inspector-group d-none" id="inspectorNavigationGroup">
+                                <label for="navigationActionField">Ao tocar neste elemento</label>
+                                <select id="navigationActionField">
+                                    <option value="">Sem navegação</option>
+                                    <option value="page">Abrir página</option>
+                                    <option value="section">Abrir seção</option>
+                                </select>
                                 <label for="buttonDestinationField">Página de destino</label>
                                 <select id="buttonDestinationField"></select>
+                                <label for="sectionDestinationField">Seção de destino</label>
+                                <select id="sectionDestinationField"></select>
+                                <small>Ao abrir uma seção, o totem encontra sua primeira página ativa e publicada.</small>
                             </div>
 
                             <div class="cultura-inspector-group d-none" id="inspectorImageGroup">
@@ -301,8 +325,8 @@
             <span><kbd>Shift</kbd> + seta move 10 px</span>
             <span><i class="fas fa-mobile-alt" aria-hidden="true"></i> Cada dispositivo mantém seus próprios ajustes</span>
             <span><kbd>Ctrl</kbd> + <kbd>S</kbd> salva o rascunho</span>
-            @if ($pagina->published_at)
-                <span>Última publicação: {{ $pagina->published_at->format('d/m/Y H:i') }}</span>
+            @if ($pagina->pagina_publicada_em)
+                <span>Última publicação: {{ $pagina->pagina_publicada_em->format('d/m/Y H:i') }}</span>
             @endif
         </div>
     </div>

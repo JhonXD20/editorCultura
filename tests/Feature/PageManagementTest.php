@@ -51,6 +51,7 @@ class PageManagementTest extends TestCase
     public function test_authenticated_user_can_create_and_update_a_page(): void
     {
         $user = User::factory()->create();
+        $this->page('Página inicial', 'home');
 
         $response = $this->actingAs($user)
             ->post(route('gestao-conteudo.store'), [
@@ -64,7 +65,7 @@ class PageManagementTest extends TestCase
         $this->actingAs($user)
             ->put(route('gestao-conteudo.update', $page), [
                 'pagina_titulo' => 'Exposição atualizada',
-                'pagina_tipo_layout' => 'padrao',
+                'pagina_tipo_layout' => 'interna',
                 'pagina_ativo' => false,
             ])
             ->assertRedirect(route('gestao-conteudo.index'));
@@ -72,7 +73,7 @@ class PageManagementTest extends TestCase
         $this->assertDatabaseHas('paginas', [
             'id' => $page->id,
             'pagina_titulo' => 'Exposição atualizada',
-            'pagina_tipo_layout' => 'padrao',
+            'pagina_tipo_layout' => 'interna',
             'pagina_ativo' => false,
         ]);
     }

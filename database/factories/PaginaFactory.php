@@ -38,10 +38,10 @@ class PaginaFactory extends Factory
     public function published(): static
     {
         return $this->state(fn (): array => [
-            'published_html' => '<main data-cultura-responsive-version="2"><h1>Conteúdo publicado</h1></main>',
-            'published_css' => 'h1 { color: #20252a; }',
-            'published_at' => now(),
-            'editor_version' => 'grapesjs-0.23',
+            'pagina_html_publicado' => '<main data-cultura-responsive-version="2"><h1>Conteúdo publicado</h1></main>',
+            'pagina_css_publicado' => 'h1 { color: #20252a; }',
+            'pagina_publicada_em' => now(),
+            'pagina_versao_editor' => 'grapesjs-0.23',
         ]);
     }
 }

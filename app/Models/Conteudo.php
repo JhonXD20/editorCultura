@@ -15,7 +15,7 @@ class Conteudo extends Model
         'pagina_id',
         'conteudo_tipo_componente',
         'conteudo_dados_conteudo',
-        'conteudo_ordem_exibicao'
+        'conteudo_ordem_exibicao',
     ];
 
     // Converte automaticamente o JSON do banco para Array no PHP e vice-versa

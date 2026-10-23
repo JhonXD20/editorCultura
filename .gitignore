@@ -18,6 +18,16 @@
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage
+/public/totem/img/uploads/*
+!/public/totem/img/uploads/.gitignore
+/storage/app/backups
+/playwright-report
+/test-results
+/tmp/
+/.previous-app-image
+/.previous-web-image
+/infrastructure.tar.gz
+/.deployed-images.env
 /storage/*.key
 /storage/pail
 /vendor
@@ -25,3 +35,16 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+~$*
+*.tmp
+
+# Materiais acadêmicos e capturas locais; documentação técnica continua versionável.
+/docs/tcc/
+/docs/tcc-preview/
+/docs/*TCC.md
+/docs/PRONTIDAO-*.md
+/resources/tcc/
+/scripts/verify-tcc.mjs
+/app/Console/Commands/PrepareTccPresentation.php
+/app/Support/TccPresentationContent.php
+/tests/Feature/TccPresentationTest.php

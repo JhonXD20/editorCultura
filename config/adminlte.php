@@ -1,5 +1,13 @@
 <?php
 
+use JeroenNoten\LaravelAdminLte\Menu\Filters\ActiveFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\ClassesFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\DataFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\LangFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter;
+
 return [
 
     /*
@@ -48,7 +56,7 @@ return [
     */
 
     'google_fonts' => [
-        'allowed' => true,
+        'allowed' => false,
     ],
 
     /*
@@ -318,23 +326,52 @@ return [
             'text' => 'dashboard',
             'url' => '/admin',
             'icon' => 'fas fa-fw fa-tachometer-alt',
+            'can' => 'edit-content',
 
         ],
         [
             'text' => 'Gestão de Conteúdo',
             'url' => '/gestao-conteudo',
             'icon' => 'fa fa-object-group',
+            'can' => 'edit-content',
+        ],
+        [
+            'text' => 'Revisões',
+            'url' => '/revisoes',
+            'icon' => 'fas fa-check-double',
+            'can' => 'administer',
+        ],
+        [
+            'text' => 'Biblioteca de mídia',
+            'url' => '/midias',
+            'icon' => 'fas fa-photo-video',
+            'can' => 'edit-content',
+        ],
+        [
+            'text' => 'Usuários',
+            'url' => '/usuarios',
+            'icon' => 'fas fa-users-cog',
+            'can' => 'administer',
         ],
         [
             'text' => 'Totens',
             'url' => '/totens',
             'icon' => ' fa fa-server',
+            'can' => 'administer',
         ],
         [
             'text' => 'Relatórios',
             'url' => '/relatorios',
             'icon' => 'fas fa-chart-line',
+            'can' => 'administer',
         ],
+        [
+            'text' => 'Avaliações',
+            'url' => '/avaliacoes',
+            'icon' => 'fas fa-comment-dots',
+            'can' => 'administer',
+        ],
+        ['text' => 'Parear dispositivo', 'url' => '/pairing', 'icon' => 'fas fa-tablet-alt', 'can' => 'pair-device'],
     ],
 
     /*
@@ -350,13 +387,13 @@ return [
     */
 
     'filters' => [
-        JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\ActiveFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\ClassesFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\LangFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\DataFilter::class,
+        GateFilter::class,
+        HrefFilter::class,
+        SearchFilter::class,
+        ActiveFilter::class,
+        ClassesFilter::class,
+        LangFilter::class,
+        DataFilter::class,
     ],
 
     /*

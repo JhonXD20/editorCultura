@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\AuthenticateDevice;
 use App\Models\Pagina;
 use App\Models\Totem;
 use App\Models\User;
@@ -25,7 +26,7 @@ class TotemManagementTest extends TestCase
 
         $this->get(route('admin.totens.index'))->assertRedirect(route('login'));
         $this->getJson(route('admin.totens.status'))->assertUnauthorized();
-        $this->getJson(route('admin.totens.acesso', $totem))->assertUnauthorized();
+        $this->postJson(route('admin.totens.acesso', $totem))->assertUnauthorized();
         $this->get(route('admin.totens.show', $totem))->assertRedirect(route('login'));
         $this->post(route('admin.totens.store'))->assertRedirect(route('login'));
     }
@@ -119,6 +120,7 @@ class TotemManagementTest extends TestCase
                 'pagina_inicial_id' => null,
                 'totem_orientacao' => 'landscape',
                 'totem_inatividade_segundos' => 120,
+                'questionario_ativo' => false,
             ]);
 
         $this->actingAs($user)->put(route('admin.totens.update', $totem), [
@@ -217,30 +219,34 @@ class TotemManagementTest extends TestCase
         $this->assertDatabaseCount('totens', 0);
     }
 
-    public function test_admin_can_generate_an_expiring_tablet_start_link(): void
+    public function test_admin_can_generate_a_one_time_pairing_code(): void
     {
         Carbon::setTestNow('2026-10-14 12:00:00');
-        $page = Pagina::factory()->create();
+        $page = Pagina::factory()->published()->create();
         $totem = Totem::factory()->create(['pagina_inicial_id' => $page->id]);
 
         $response = $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.totens.acesso', $totem))
+            ->postJson(route('admin.totens.acesso', $totem))
             ->assertOk()
-            ->assertJsonPath('pagina', $page->pagina_titulo);
+            ->assertJsonPath('pagina', $page->pagina_titulo)
+            ->assertJsonStructure(['url', 'code', 'expira_em']);
 
         $url = $response->json('url');
-        $this->get($url)->assertRedirect(route('totem.exibir', $page))
-            ->assertSessionHas('totem_ativo_id', $totem->id);
+        $code = $response->json('code');
+        $this->get($url)->assertOk()->assertSee($code);
+        $this->post(route('device.pair'), ['code' => $code])
+            ->assertRedirect(route('totem.exibir', $page))
+            ->assertCookie(AuthenticateDevice::COOKIE);
 
-        Carbon::setTestNow(now()->addMinutes(31));
-        $this->get($url)->assertForbidden();
+        $this->post(route('device.pair'), ['code' => $code])
+            ->assertSessionHasErrors('code');
     }
 
     public function test_start_link_requires_an_active_page(): void
     {
         $totem = Totem::factory()->create();
         $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.totens.acesso', $totem))
+            ->postJson(route('admin.totens.acesso', $totem))
             ->assertUnprocessable();
     }
 }

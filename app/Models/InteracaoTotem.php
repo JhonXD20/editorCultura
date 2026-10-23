@@ -21,6 +21,8 @@ class InteracaoTotem extends Model
 
     protected $casts = [
         'duracao_segundos' => 'integer',
+        'ocorrido_em' => 'datetime',
+        'horario_validado' => 'boolean',
     ];
 
     public function totem(): BelongsTo

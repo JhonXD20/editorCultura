@@ -1,7 +1,8 @@
 
 import Chart from 'chart.js/auto';
+import { onAdminPage } from './admin-lifecycle';
 
-document.addEventListener('DOMContentLoaded', () => {
+onAdminPage(() => {
 
     const elementoDados = document.getElementById(
         'relatoriosDados'
@@ -336,4 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    return () => {
+        [canvasLinha, canvasRosca].forEach((canvas) => Chart.getChart(canvas)?.destroy());
+    };
 });

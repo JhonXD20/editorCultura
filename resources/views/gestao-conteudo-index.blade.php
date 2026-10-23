@@ -53,6 +53,8 @@
             </button>
         </div>
 
+        @include('partials.content-sections')
+
         <section class="dashboard-card content-manager-card" aria-labelledby="pagesListTitle">
             <div class="content-manager-card-heading">
                 <div>
@@ -75,10 +77,13 @@
                     </thead>
                     <tbody id="pagesTableBody">
                         @forelse ($paginas as $pagina)
+                            @if ($loop->first || $paginas[$loop->index - 1]->secao_id !== $pagina->secao_id)
+                                <tr data-section-heading="{{ $pagina->secao_id ?? 'avulsas' }}" class="content-section-heading"><th colspan="5">{{ $pagina->secao?->nome ?? 'Início e páginas avulsas' }}</th></tr>
+                            @endif
                             @php
-                                $hasPendingChanges = $pagina->published_at
-                                    && $pagina->updated_at->greaterThan($pagina->published_at);
-                                $publicationStatus = $pagina->published_at ? 'publicada' : 'rascunho';
+                                $hasPendingChanges = $pagina->pagina_publicada_em
+                                    && $pagina->updated_at->greaterThan($pagina->pagina_publicada_em);
+                                $publicationStatus = $pagina->pagina_publicada_em ? 'publicada' : 'rascunho';
                                 $filterTerms = [$publicationStatus];
 
                                 if (! $pagina->pagina_ativo) {
@@ -87,6 +92,7 @@
                             @endphp
                             <tr
                                 data-page-row
+                                data-page-section="{{ $pagina->secao_id ?? 'avulsas' }}"
                                 data-page-name="{{ Illuminate\Support\Str::lower($pagina->pagina_titulo) }}"
                                 data-page-filters="{{ implode(' ', $filterTerms) }}"
                             >
@@ -99,8 +105,27 @@
                                             <a href="{{ route('gestao-conteudo.edit', $pagina) }}">{{ $pagina->pagina_titulo }}</a>
                                             <small>
                                                 #{{ $pagina->id }} ·
-                                                {{ $pagina->published_at ? 'Publicada em '.$pagina->published_at->format('d/m/Y') : 'Ainda não publicada' }}
+                                                {{ $pagina->pagina_publicada_em ? 'Publicada em '.$pagina->pagina_publicada_em->format('d/m/Y') : 'Ainda não publicada' }}
                                             </small>
+                                            <details class="mt-2"><summary>Propriedades</summary>
+                                                <form class="mt-2" method="POST" action="{{ route('gestao-conteudo.update', $pagina) }}">@csrf @method('PUT')
+                                                    <label class="sr-only" for="page-title-{{ $pagina->id }}">Nome da página</label>
+                                                    <input class="form-control form-control-sm mb-2" id="page-title-{{ $pagina->id }}" name="pagina_titulo" value="{{ $pagina->pagina_titulo }}" maxlength="100" required>
+                                                    <input type="hidden" name="pagina_tipo_layout" value="{{ $pagina->pagina_tipo_layout === 'home' ? 'home' : 'interna' }}">
+                                                    @if ($pagina->pagina_tipo_layout !== 'home')
+                                                        @can('administer')
+                                                            <label for="page-section-{{ $pagina->id }}">Seção</label>
+                                                            <select class="form-control form-control-sm mb-2" name="secao_id" id="page-section-{{ $pagina->id }}">
+                                                                <option value="">Página avulsa</option>
+                                                                @foreach ($secoes as $secao)<option value="{{ $secao->id }}" @selected($pagina->secao_id === $secao->id)>{{ $secao->nome }}</option>@endforeach
+                                                            </select>
+                                                        @endcan
+                                                    @endif
+                                                    @can('administer')<label for="page-active-{{ $pagina->id }}">Visibilidade</label><select class="form-control form-control-sm mb-2" name="pagina_ativo" id="page-active-{{ $pagina->id }}"><option value="1" @selected($pagina->pagina_ativo)>Ativa</option><option value="0" @selected(!$pagina->pagina_ativo)>Inativa</option></select>
+                                                    @else<input type="hidden" name="pagina_ativo" value="{{ $pagina->pagina_ativo ? 1 : 0 }}">@endcan
+                                                    <button class="btn btn-sm btn-primary" type="submit">Salvar propriedades</button>
+                                                </form>
+                                            </details>
                                         </div>
                                     </div>
                                 </td>
@@ -113,7 +138,7 @@
                                     <div class="content-status-list">
                                         @if (! $pagina->pagina_ativo)
                                             <span class="content-status is-inactive"><i class="fas fa-circle" aria-hidden="true"></i> Inativa</span>
-                                        @elseif ($pagina->published_at)
+                                        @elseif ($pagina->pagina_publicada_em)
                                             <span class="content-status is-published"><i class="fas fa-circle" aria-hidden="true"></i> Publicada</span>
                                         @else
                                             <span class="content-status is-draft"><i class="fas fa-circle" aria-hidden="true"></i> Rascunho</span>
@@ -133,7 +158,7 @@
                                 <td>
                                     <div class="content-page-actions">
                                         @if ($pagina->pagina_ativo)
-                                            <a href="{{ route('totem.exibir', $pagina) }}" target="_blank" rel="noopener" title="Visualizar página" aria-label="Visualizar {{ $pagina->pagina_titulo }}">
+                                            <a href="{{ route('gestao-conteudo.preview', $pagina) }}" target="_blank" rel="noopener" title="Visualizar página" aria-label="Visualizar {{ $pagina->pagina_titulo }}">
                                                 <i class="fas fa-eye" aria-hidden="true"></i>
                                             </a>
                                         @else
@@ -145,6 +170,21 @@
                                             <i class="fas fa-pen" aria-hidden="true"></i>
                                             <span>Editar</span>
                                         </a>
+                                        <form method="POST" action="{{ route('gestao-conteudo.duplicate', $pagina) }}">
+                                            @csrf
+                                            <button type="submit" title="Duplicar página" aria-label="Duplicar {{ $pagina->pagina_titulo }}">
+                                                <i class="fas fa-copy" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                        @can('administer')
+                                            @if ($pagina->pagina_tipo_layout !== 'home' && $pagina->pagina_ativo)
+                                                <form method="POST" action="{{ route('gestao-conteudo.set-home', $pagina) }}">
+                                                    @csrf
+                                                    <button type="submit" title="Definir como inicial" aria-label="Definir {{ $pagina->pagina_titulo }} como inicial">
+                                                        <i class="fas fa-home" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
                                         <form
                                             method="POST"
                                             action="{{ route('gestao-conteudo.destroy', $pagina) }}"
@@ -163,6 +203,7 @@
                                                 <i class="fas fa-trash-alt" aria-hidden="true"></i>
                                             </button>
                                         </form>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
@@ -224,6 +265,12 @@
                         <option value="home" @selected(old('pagina_tipo_layout') === 'home')>Página inicial</option>
                     </select>
                     <small>Página inicial é a tela de entrada do totem. Para conteúdos comuns, use página interna.</small>
+                    <label for="newPageSection">Seção</label>
+                    <select id="newPageSection" name="secao_id">
+                        <option value="">Página avulsa</option>
+                        @foreach ($secoes as $secao)<option value="{{ $secao->id }}" @selected((string) old('secao_id') === (string) $secao->id)>{{ $secao->nome }}</option>@endforeach
+                    </select>
+                    <small>A nova página entra no final da sequência da seção.</small>
                     @error('pagina_tipo_layout')
                         <small class="content-field-error">{{ $message }}</small>
                     @enderror

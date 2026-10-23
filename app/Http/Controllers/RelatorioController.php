@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\InteracaoTotem;
 use App\Models\Pagina;
 use App\Models\Totem;
+use App\Support\TelemetryMetrics;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class RelatorioController extends Controller
@@ -111,19 +110,7 @@ class RelatorioController extends Controller
         |
         */
 
-        $base = InteracaoTotem::query()
-            ->whereBetween(
-                'interacoes_totem.created_at',
-                [$inicio, $fim]
-            );
-
-        if ($totemId !== null) {
-
-            $base->where(
-                'interacoes_totem.totem_id',
-                $totemId
-            );
-        }
+        $base = TelemetryMetrics::query($inicio, $fim, $totemId === null ? null : (int) $totemId);
 
         /*
         |--------------------------------------------------------------------------
@@ -140,7 +127,7 @@ class RelatorioController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalInteracoes = (clone $toques)->count();
+        $totalInteracoes = (int) (clone $toques)->sum('quantidade');
 
         /*
         |--------------------------------------------------------------------------
@@ -163,8 +150,7 @@ class RelatorioController extends Controller
 
         $contagens = (clone $toques)
             ->selectRaw(
-                'DATE(interacoes_totem.created_at) AS dia,
-                 COUNT(*) AS total'
+                'dia, SUM(quantidade) AS total'
             )
             ->groupBy('dia')
             ->pluck('total', 'dia')
@@ -199,18 +185,14 @@ class RelatorioController extends Controller
         |
         */
 
-        $expressaoHora = DB::connection()
-            ->getDriverName() === 'sqlite'
-                ? "CAST(strftime('%H', interacoes_totem.created_at) AS INTEGER)"
-                : 'HOUR(interacoes_totem.created_at)';
-
-        $pico = (clone $toques)
+        $picoHistoricoIncompleto = (clone $toques)->whereNull('hora')->exists();
+        $pico = $picoHistoricoIncompleto ? null : (clone $toques)
             ->selectRaw(
-                "{$expressaoHora} AS hora,
-                 COUNT(*) AS total"
+                'hora, SUM(quantidade) AS total'
             )
-            ->groupByRaw($expressaoHora)
+            ->groupBy('hora')
             ->orderByDesc('total')
+            ->orderBy('hora')
             ->first();
 
         $picoHora = $pico
@@ -232,10 +214,10 @@ class RelatorioController extends Controller
 
         $retencao = (clone $base)
             ->where('tipo', 'tempo_pagina')
-            ->whereNotNull('duracao_segundos')
+            ->where('amostras_duracao', '>', 0)
             ->selectRaw(
                 'pagina_id,
-                 ROUND(AVG(duracao_segundos)) AS media_segundos'
+                  ROUND(1.0 * SUM(duracao) / SUM(amostras_duracao)) AS media_segundos'
             )
             ->groupBy('pagina_id')
             ->orderByDesc('media_segundos')
@@ -270,7 +252,7 @@ class RelatorioController extends Controller
         $distribuicao = (clone $toques)
             ->leftJoin(
                 'totens',
-                'interacoes_totem.totem_id',
+                'metricas.totem_id',
                 '=',
                 'totens.id'
             )
@@ -279,7 +261,7 @@ class RelatorioController extends Controller
                     totens.totem_nome_identificacao,
                     'Não identificado'
                 ) AS nome,
-                COUNT(*) AS total"
+                SUM(quantidade) AS total"
             )
             ->groupBy(
                 'totens.id',
@@ -356,6 +338,7 @@ class RelatorioController extends Controller
 
             'picoHora',
             'picoQuantidade',
+            'picoHistoricoIncompleto',
 
             'nomePaginaRetencao',
             'mediaRetencaoSegundos',

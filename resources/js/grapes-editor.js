@@ -1,4 +1,5 @@
 import grapesjs from 'grapesjs';
+import { registerCulturalBlocks } from './cultural-blocks';
 import pt from 'grapesjs/locale/pt.mjs';
 import 'grapesjs/dist/css/grapes.min.css';
 import '../css/grapes-editor.css';
@@ -11,6 +12,7 @@ if (configElement && appElement) {
     const pageOptions = (config.pages || [])
         .filter((page) => page.active)
         .map((page) => ({ id: String(page.id), label: page.title }));
+    const sectionOptions = (config.sections || []).map((section) => ({ id: String(section.id), label: section.label }));
     const deviceProfiles = {
         totem: { id: 'totem', name: 'Tablet horizontal', width: 1366, height: 768, widthMedia: 1366, fontScale: 1 },
         tablet: { id: 'tablet', name: 'Tablet vertical', width: 768, height: 1024, widthMedia: 992, fontScale: 0.85 },
@@ -19,7 +21,7 @@ if (configElement && appElement) {
 
     const navigationPlugin = (editorInstance) => {
         editorInstance.DomComponents.addType('cultura-navigation', {
-            isComponent: (element) => element?.getAttribute?.('data-cultura-navigation') === '1',
+            isComponent: (element) => element?.tagName === 'BUTTON' && element?.getAttribute?.('data-cultura-navigation') === '1',
             model: {
                 defaults: {
                     tagName: 'button',
@@ -98,6 +100,7 @@ if (configElement && appElement) {
         fromElement: false,
         dragMode: 'absolute',
         storageManager: false,
+        allowScripts: false,
         i18n: {
             locale: 'pt',
             localeFallback: 'pt',
@@ -107,7 +110,7 @@ if (configElement && appElement) {
         canvas: {
             styles: ['/vendor/fontawesome-free/css/all.min.css'],
         },
-        plugins: [navigationPlugin],
+        plugins: [navigationPlugin, (instance) => registerCulturalBlocks(instance, config.videoAssets || [])],
         blockManager: { appendTo: '#gjsBlocks' },
         traitManager: { appendTo: '#gjsTraits' },
         layerManager: { appendTo: '#gjsLayers' },
@@ -122,6 +125,7 @@ if (configElement && appElement) {
             })),
         },
         assetManager: {
+            assets: config.mediaAssets || [],
             upload: config.uploadUrl,
             uploadName: 'files',
             multiUpload: true,
@@ -270,6 +274,13 @@ if (configElement && appElement) {
             content: { type: 'cultura-navigation' },
         },
         {
+            id: 'section-entry',
+            label: 'Card para seção',
+            category: 'Interação',
+            media: '<i class="fas fa-layer-group"></i>',
+            content: '<article data-cultura-navigation="1" data-section-id="" role="link" style="position:absolute;left:100px;top:180px;width:360px;padding:28px;border-radius:16px;background:#174b35;color:#fff"><h2>Conheça nossa história</h2><p>Selecione a seção de destino nas propriedades.</p></article>',
+        },
+        {
             id: 'divider',
             label: 'Divisor',
             category: 'Organização',
@@ -325,12 +336,17 @@ if (configElement && appElement) {
     const buttonCustomImageButton = document.getElementById('buttonCustomImageButton');
     const removeButtonImageButton = document.getElementById('removeButtonImageButton');
     const buttonDestinationField = document.getElementById('buttonDestinationField');
+    const navigationActionField = document.getElementById('navigationActionField');
+    const sectionDestinationField = document.getElementById('sectionDestinationField');
     const changeImageButton = document.getElementById('changeImageButton');
     const imageAltField = document.getElementById('imageAltField');
     const imagePreview = document.getElementById('imagePreview');
     const linkUrlField = document.getElementById('linkUrlField');
     const linkNewWindowField = document.getElementById('linkNewWindowField');
 
+    buttonDestinationField.append(new Option('Selecione uma página', ''));
+    sectionDestinationField.append(new Option('Selecione uma seção', ''));
+    sectionOptions.forEach((section) => sectionDestinationField.append(new Option(section.label, section.id)));
     pageOptions.forEach((page) => {
         const option = document.createElement('option');
         option.value = page.id;
@@ -343,6 +359,8 @@ if (configElement && appElement) {
     let freePositionEnabled = true;
     let autosaveTimer = null;
     let savingPromise = null;
+    let publishing = false;
+    let conflicted = false;
 
     const setStatus = (message, state = '') => {
         statusElement.textContent = message;
@@ -371,6 +389,13 @@ if (configElement && appElement) {
         const collapsed = appElement.classList.toggle(className);
         button.classList.toggle('is-active', !collapsed);
         button.setAttribute('aria-pressed', String(!collapsed));
+        if (!collapsed && window.matchMedia('(max-width: 900px)').matches) {
+            const otherSide = side === 'left' ? 'right' : 'left';
+            const otherButton = side === 'left' ? togglePropertiesButton : toggleBlocksButton;
+            appElement.classList.add(`is-${otherSide}-collapsed`);
+            otherButton.classList.remove('is-active');
+            otherButton.setAttribute('aria-pressed', 'false');
+        }
         refreshCanvas();
     };
 
@@ -531,13 +556,11 @@ if (configElement && appElement) {
             'position', 'font-size',
         ]);
         const currentStyle = responsiveRule(component, deviceId)?.getStyle?.() || {};
-        const preservedStyle = Object.fromEntries(
-            Object.entries(currentStyle).filter(([property]) => !geometryProperties.has(property)),
-        );
+        const preservedStyle = currentStyle;
 
         editor.Css.setRule(componentSelector(component), {
-            ...preservedStyle,
             ...style,
+            ...preservedStyle,
         }, mediaOptions(deviceId));
     };
 
@@ -553,10 +576,6 @@ if (configElement && appElement) {
         const versionMarker = `${marker}-version`;
 
         const rootAttributes = root?.getAttributes?.() || {};
-
-        if (!force && rootAttributes[marker] === '1' && rootAttributes[versionMarker] === '2') {
-            return;
-        }
 
         const applyTree = (
             component,
@@ -683,13 +702,15 @@ if (configElement && appElement) {
         const image = isImageComponent(component);
         const link = isLinkComponent(component);
         const text = isTextComponent(component);
-        const navigation = button && component.getAttributes()['data-cultura-navigation'] === '1';
+        const navigation = component.getAttributes()['data-cultura-navigation'] === '1';
+        const supportsNavigation = ['a', 'button', 'article', 'section', 'div', 'img', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)
+            && component.get('type') !== 'wrapper';
 
         inspectorElementName.textContent = component.getName?.() || 'Elemento';
         inspectorElementTag.textContent = tagName;
         inspectorTextGroup.classList.toggle('d-none', !text);
         inspectorButtonGroup.classList.toggle('d-none', !button);
-        inspectorNavigationGroup.classList.toggle('d-none', !navigation);
+        inspectorNavigationGroup.classList.toggle('d-none', !supportsNavigation);
         inspectorImageGroup.classList.toggle('d-none', !image);
         inspectorLinkGroup.classList.toggle('d-none', !link);
 
@@ -728,8 +749,15 @@ if (configElement && appElement) {
             removeButtonImageButton.classList.toggle('d-none', !component.get('cultura-image'));
         }
 
-        if (navigation) {
-            buttonDestinationField.value = component.getAttributes()['data-page-id'] || '';
+        const navigationAttributes = component.getAttributes();
+        const action = navigation ? (navigationAttributes['data-section-id'] !== undefined ? 'section' : 'page') : '';
+        navigationActionField.value = action;
+        buttonDestinationField.value = navigationAttributes['data-page-id'] || '';
+        sectionDestinationField.value = navigationAttributes['data-section-id'] || '';
+        for (const [field, kind] of [[buttonDestinationField, 'page'], [sectionDestinationField, 'section']]) {
+            field.hidden = action !== kind;
+            field.disabled = action !== kind;
+            document.querySelector(`label[for="${field.id}"]`).hidden = action !== kind;
         }
 
         if (image) {
@@ -911,6 +939,11 @@ if (configElement && appElement) {
         });
 
         if (!response.ok) {
+            if (response.status === 409) {
+                conflicted = true;
+                window.clearTimeout(autosaveTimer);
+                document.getElementById('downloadConflictCopy').hidden = false;
+            }
             throw new Error(await extractError(response));
         }
 
@@ -918,6 +951,7 @@ if (configElement && appElement) {
     };
 
     const saveDraft = async ({ quiet = false } = {}) => {
+        if (conflicted || publishing) return;
         if (savingPromise) {
             return savingPromise;
         }
@@ -930,10 +964,15 @@ if (configElement && appElement) {
         const submittedVersion = changeVersion;
         savingPromise = request(config.saveUrl, 'PUT', {
             project_data: editor.getProjectData(),
+            base_version: config.draftVersion,
+            manual: !quiet,
+            html: quiet ? null : editor.getHtml(),
+            css: quiet ? null : editor.getCss(),
         });
 
         try {
-            await savingPromise;
+            const saved = await savingPromise;
+            config.draftVersion = saved.draft_version;
             dirty = changeVersion !== submittedVersion;
 
             if (dirty) {
@@ -959,56 +998,66 @@ if (configElement && appElement) {
             throw error;
         } finally {
             savingPromise = null;
-            saveButton.disabled = false;
+            saveButton.disabled = conflicted;
         }
     };
 
     const publish = async () => {
+        const canPublish = Boolean(config.canPublish);
         const confirmed = await window.AdminNotice?.confirm({
             type: 'success',
             icon: 'fas fa-cloud-upload-alt',
-            title: 'Publicar página?',
-            message: 'Publicar esta versão para os totens agora?',
-            confirmText: 'Publicar agora',
+            title: canPublish ? 'Publicar página?' : 'Enviar para revisão?',
+            message: canPublish
+                ? 'Publicar esta versão para os totens agora?'
+                : 'Enviar esta versão imutável para aprovação administrativa?',
+            confirmText: canPublish ? 'Publicar agora' : 'Enviar para revisão',
         });
 
-        if (!confirmed) {
-            return;
-        }
+        if (!confirmed) return;
 
+        window.clearTimeout(autosaveTimer);
+        if (savingPromise) {
+            try {
+                const saved = await savingPromise;
+                config.draftVersion = saved.draft_version;
+            } catch { return; }
+        }
+        if (conflicted) return;
+        publishing = true;
         publishButton.disabled = true;
         saveButton.disabled = true;
-        setStatus('Validando e publicando…', 'saving');
+        setStatus(canPublish ? 'Validando e publicando…' : 'Preparando revisão…', 'saving');
 
         try {
             ensureResponsiveLayout('tablet');
             ensureResponsiveLayout('mobile');
             const submittedVersion = changeVersion;
-
-            await request(config.publishUrl, 'POST', {
+            const result = await request(canPublish ? config.publishUrl : config.submitUrl, 'POST', {
                 project_data: editor.getProjectData(),
                 html: editor.getHtml(),
                 css: editor.getCss(),
+                base_version: config.draftVersion,
             });
-
+            config.draftVersion = result.draft_version;
             dirty = changeVersion !== submittedVersion;
             document.getElementById('firstDraftNotice')?.classList.add('d-none');
-            setStatus(
-                dirty ? 'Publicado, mas há alterações novas no editor' : 'Página publicada com segurança',
-                dirty ? '' : 'success',
-            );
+            setStatus(dirty
+                ? 'Concluído, mas há alterações novas no editor'
+                : (canPublish ? 'Página publicada com segurança' : 'Conteúdo enviado para revisão'), dirty ? '' : 'success');
             window.AdminNotice?.success(
                 dirty
-                    ? 'A versão foi publicada, mas já existem alterações novas aguardando salvamento.'
-                    : 'A página está disponível nos totens.',
-                'Página publicada',
+                    ? 'A versão foi enviada, mas já existem alterações novas aguardando salvamento.'
+                    : (canPublish ? 'A página está disponível nos totens.' : 'Um administrador foi notificado para revisar o conteúdo.'),
+                canPublish ? 'Página publicada' : 'Revisão solicitada',
             );
         } catch (error) {
             setStatus(error.message, 'error');
-            window.AdminNotice?.error(error.message, 'Erro ao publicar');
+            window.AdminNotice?.error(error.message, canPublish ? 'Erro ao publicar' : 'Erro ao enviar revisão');
         } finally {
-            publishButton.disabled = false;
-            saveButton.disabled = false;
+            publishing = false;
+            publishButton.disabled = conflicted;
+            saveButton.disabled = conflicted;
         }
     };
 
@@ -1019,11 +1068,16 @@ if (configElement && appElement) {
 
     editor.on('load', () => {
         ready = true;
+        appElement.dataset.editorReady = 'true';
         setFreePosition(true);
         editor.Devices.select('totem');
         editor.Canvas.getDocument()?.addEventListener('keydown', handleCanvasKeyboard);
         refreshHistoryButtons();
         updateElementButtons();
+        if (window.matchMedia('(max-width: 900px)').matches) {
+            togglePanel('left', toggleBlocksButton);
+            togglePanel('right', togglePropertiesButton);
+        }
     });
 
     editor.on('component:create', prepareFreeComponent);
@@ -1041,9 +1095,11 @@ if (configElement && appElement) {
         setStatus('Alterações ainda não salvas');
         refreshHistoryButtons();
         window.clearTimeout(autosaveTimer);
-        autosaveTimer = window.setTimeout(() => {
-            saveDraft({ quiet: true }).catch(() => {});
-        }, 4000);
+        if (!publishing && !conflicted) {
+            autosaveTimer = window.setTimeout(() => {
+                saveDraft({ quiet: true }).catch(() => {});
+            }, 4000);
+        }
     });
 
     editor.on('asset:upload:error', () => {
@@ -1053,6 +1109,15 @@ if (configElement && appElement) {
     });
 
     saveButton.addEventListener('click', () => saveDraft().catch(() => {}));
+    document.getElementById('downloadConflictCopy')?.addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(editor.getProjectData(), null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `pagina-${config.pageId}-copia-local.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    });
     publishButton.addEventListener('click', publish);
     focusModeButton.addEventListener('click', () => {
         setFocusMode(!appElement.classList.contains('is-focus-mode'));
@@ -1210,9 +1275,23 @@ if (configElement && appElement) {
     buttonDestinationField.addEventListener('change', () => {
         const component = selectedComponent();
 
-        if (component && isButtonComponent(component)) {
+        if (component) {
             component.addAttributes({ 'data-page-id': buttonDestinationField.value });
         }
+    });
+    navigationActionField.addEventListener('change', () => {
+        const component = selectedComponent();
+        if (!component) return;
+        const action = navigationActionField.value;
+        component.removeAttributes(['data-cultura-navigation', 'data-page-id', 'data-section-id']);
+        if (action) component.addAttributes({
+            'data-cultura-navigation': '1',
+            [action === 'section' ? 'data-section-id' : 'data-page-id']: '',
+        });
+        refreshInspector();
+    });
+    sectionDestinationField.addEventListener('change', () => {
+        selectedComponent()?.addAttributes({ 'data-section-id': sectionDestinationField.value });
     });
 
     changeImageButton.addEventListener('click', () => {

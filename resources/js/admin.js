@@ -4,11 +4,12 @@
 ========================================== */
 
 import Chart from 'chart.js/auto';
+import { onAdminPage } from './admin-lifecycle';
 
 import '../css/admin.css';
 
 
-document.addEventListener('DOMContentLoaded', () => {
+onAdminPage(() => {
 
     const dashboard = document.getElementById(
         'adminOverview'
@@ -304,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnAtualizar?.addEventListener('click', () => {
 
-        window.location.reload();
+        window.AdminNavigation?.refresh();
 
     });
 
@@ -314,16 +315,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const intervaloAtualizacao = 60000;
 
-    setInterval(() => {
+    const refreshTimer = setInterval(() => {
 
         // Evita recarregar quando
         // o usuário estiver em outra aba.
-        if (document.visibilityState === 'visible') {
+        if (document.visibilityState === 'visible' && dashboard.isConnected) {
 
-            window.location.reload();
+            window.AdminNavigation?.refresh();
 
         }
 
     }, intervaloAtualizacao);
+
+    return () => {
+        clearInterval(refreshTimer);
+        [canvasHorario, canvasSemana].forEach((canvas) => { if (canvas) Chart.getChart(canvas)?.destroy(); });
+    };
 
 });

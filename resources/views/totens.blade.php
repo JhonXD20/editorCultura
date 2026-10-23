@@ -21,6 +21,7 @@
     data-modo-anterior="{{ old('totem_form_modo', 'criar') }}"
     data-id-anterior="{{ old('totem_id_edicao') }}"
     data-status-url="{{ route('admin.totens.status') }}"
+    data-csrf-token="{{ csrf_token() }}"
     data-refresh-interval="10000"
 >
 
@@ -205,7 +206,8 @@
                                     <button
                                         type="button"
                                         class="btn-action btn-reiniciar-totem"
-                                        title="Reiniciar Totem"
+                                        title="Recarregar conteúdo"
+                                        data-url="{{ route('admin.totens.reload', $totem) }}"
                                         aria-label="Reiniciar totem {{ $totem->id }}"
                                         data-nome="{{ $totem->totem_nome_identificacao }}"
                                     >
@@ -213,6 +215,7 @@
                                     </button>
 
                                     {{-- EXCLUIR --}}
+                                    <button type="button" class="btn-action btn-revogar-totem" title="Revogar acesso" data-url="{{ route('admin.totens.revoke', $totem) }}" data-nome="{{ $totem->totem_nome_identificacao }}"><i class="fas fa-ban" aria-hidden="true"></i></button>
                                     <button
                                         type="button"
                                         class="btn-action btn-excluir-totem"
@@ -465,6 +468,11 @@
                         <span class="totens-erro-campo">{{ $message }}</span>
                     @enderror
                 </div>
+                <div class="totens-form-group">
+                    <input type="hidden" name="questionario_ativo" value="0">
+                    <label for="questionario_ativo"><input type="checkbox" id="questionario_ativo" name="questionario_ativo" value="1" @checked(old('questionario_ativo', false))> Disponibilizar avaliação opcional aos visitantes</label>
+                    <small class="totens-field-help">Ative após revisar as perguntas e definir o procedimento de aplicação.</small>
+                </div>
             </fieldset>
 
             <div class="callout callout-info mb-0" id="avisoCadastroTotem">
@@ -515,10 +523,11 @@
     </div>
     <div class="totens-dialog-body">
         <p id="nomeAcessoTotem" class="text-main"></p>
-        <p class="cadastro-descricao">Abra este endereço no tablet Android para associá-lo ao equipamento e iniciar sua página inicial. O link vale por 30 minutos.</p>
-        <p id="erroAcessoTotem" class="totens-erro-requisicao" role="alert" hidden></p>
+        <p class="cadastro-descricao">Abra este endereço no tablet Android para associá-lo ao equipamento. O código é de uso único e expira em 10 minutos.</p>
+        <p id="erroAcessoTotem" class="alert alert-danger" role="alert" hidden></p>
         <label for="urlAcessoTotem">Endereço de inicialização</label>
         <input type="url" id="urlAcessoTotem" class="totens-form-control" readonly>
+        <canvas id="pairingQrCode" role="img" aria-label="QR Code para pareamento"></canvas>
         <p class="totens-field-help mt-2">O tablet precisa acessar o mesmo servidor. Configure a tela na horizontal no Android.</p>
         <p id="statusCopiaAcesso" class="totens-field-help" role="status"></p>
     </div>

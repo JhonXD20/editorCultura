@@ -2,104 +2,53 @@
 
 namespace Database\Seeders;
 
+use App\Models\Pagina;
+use App\Models\PairingCode;
 use App\Models\Totem;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class TotemSeeder extends Seeder
 {
+    public const UNITS = [
+        ['Totem 01 – Entrada & Recepção (Hall Principal)', 'Hall Principal — Entrada & Recepção'],
+        ['Totem 02 – Galeria Histórica (Pavilhão Central)', 'Pavilhão Central — Galeria Histórica'],
+        ['Totem 03 – Sala Multimídia (Espaço Memória & Tradições)', 'Espaço Memória & Tradições — Sala Multimídia'],
+    ];
+
     public function run(): void
     {
-        // Impede a execução acidental em produção.
-        if (app()->environment('production')) {
-            $this->command?->warn(
-                'Seeder de teste não executado em produção.'
-            );
-
+        if (! app()->environment(['local', 'testing'])) {
             return;
         }
 
-        /*
-         * Cenário de teste:
-         *
-         * 9 dispositivos
-         * 5 online
-         * 4 offline
-         */
+        $home = Pagina::where('pagina_tipo_layout', 'home')->whereNotNull('pagina_publicada_em')->firstOrFail();
+        foreach (self::UNITS as [$name, $location]) {
+            $totem = Totem::firstOrCreate(['totem_nome_identificacao' => $name], [
+                'totem_localizacao' => $location, 'pagina_inicial_id' => $home->id,
+                'totem_orientacao' => 'landscape', 'totem_inatividade_segundos' => 120,
+                'questionario_ativo' => false,
+                // Monitoring reflects real heartbeats; no fabricated online activity.
+                'totem_ping' => null,
+            ]);
+            if ($totem->credentials()->whereNull('revogado_em')->exists()) {
+                continue;
+            }
+            $pairing = PairingCode::where('totem_id', $totem->id)->whereNull('usado_em')->where('expira_em', '>', now())->first();
+            if ($pairing) {
+                continue;
+            }
+            do {
+                $code = (string) random_int(100000, 999999);
+            } while (PairingCode::where('hash_codigo', hash('sha256', $code))->exists());
 
-        $dispositivos = [
-            [
-                'nome' => 'TESTE - Totem Entrada Principal',
-                'local' => 'Hall de Entrada',
-                'status' => 'online',
-            ],
-            [
-                'nome' => 'TESTE - Totem Galeria Permanente',
-                'local' => 'Galeria Permanente',
-                'status' => 'online',
-            ],
-            [
-                'nome' => 'TESTE - Totem Exposição Histórica',
-                'local' => 'Sala de Exposições',
-                'status' => 'online',
-            ],
-            [
-                'nome' => 'TESTE - Totem Acervo Digital',
-                'local' => 'Área de Visitação',
-                'status' => 'online',
-            ],
-            [
-                'nome' => 'TESTE - Totem Recepção',
-                'local' => 'Recepção Principal',
-                'status' => 'online',
-            ],
-            [
-                'nome' => 'TESTE - Totem Auditório',
-                'local' => 'Auditório Principal',
-                'status' => 'offline',
-            ],
-            [
-                'nome' => 'TESTE - Totem Multimídia',
-                'local' => 'Sala de Multimídia',
-                'status' => 'offline',
-            ],
-            [
-                'nome' => 'TESTE - Totem Corredor Histórico',
-                'local' => 'Corredor Histórico',
-                'status' => 'offline',
-            ],
-            [
-                'nome' => 'TESTE - Totem Entrada Secundária',
-                'local' => 'Entrada Secundária',
-                'status' => 'offline',
-            ],
-        ];
-
-        foreach ($dispositivos as $dispositivo) {
-
-            // Gera um ping fictício conforme o status.
-            $fakeTotem = $dispositivo['status'] === 'online'
-                ? Totem::factory()->online()->make()
-                : Totem::factory()->offline()->make();
-
-            // Atualiza registros de teste existentes,
-            // evitando criar duplicatas a cada execução.
-            Totem::updateOrCreate(
-                [
-                    'totem_nome_identificacao' =>
-                    $dispositivo['nome'],
-                ],
-                [
-                    'totem_localizacao' =>
-                    $dispositivo['local'],
-
-                    'totem_ping' =>
-                    $fakeTotem->totem_ping,
-                ]
-            );
+            PairingCode::create([
+                'totem_id' => $totem->id, 'criado_por' => User::where('email', 'demo@editorcultura.test')->value('id'),
+                'hash_codigo' => hash('sha256', $code), 'expira_em' => now()->addMinutes(10),
+            ]);
+            // The existing pairing endpoint issues the persistent hashed device token.
+            $this->command?->line($name.' | Pareamento (10 min): '.url('/parear/'.$code));
         }
-
-        $this->command?->info(
-            '9 totens de teste atualizados: 5 online e 4 offline.'
-        );
+        $this->command?->line('Pareamento permanente por conta administradora: '.url('/pairing'));
     }
 }

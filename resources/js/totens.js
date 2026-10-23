@@ -1,9 +1,13 @@
 
-document.addEventListener('DOMContentLoaded', () => {
+import QRCode from 'qrcode';
+import { onAdminPage } from './admin-lifecycle';
+
+onAdminPage(() => {
 
     const pagina = document.getElementById('paginaTotens');
 
     if (!pagina) return;
+    const lifecycle = new AbortController();
 
     /* =====================================
        FUNÇÕES AUXILIARES
@@ -37,28 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elemento) {
             elemento.textContent = valor ?? '';
         }
-    }
-
-    function bloquearEnvio(form, botao, mensagem) {
-        if (!form) return;
-
-        form.addEventListener('submit', (evento) => {
-
-            if (form.dataset.enviando === '1') {
-                evento.preventDefault();
-                return;
-            }
-
-            form.dataset.enviando = '1';
-
-            if (botao) {
-                botao.disabled = true;
-                botao.innerHTML = `
-                    <i class="fas fa-spinner fa-spin"></i>
-                    ${mensagem}
-                `;
-            }
-        });
     }
 
     /* =====================================
@@ -193,9 +175,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button type="button" class="btn-action btn-editar-totem" title="Editar Totem">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button type="button" class="btn-action btn-reiniciar-totem" title="Reiniciar Totem">
+                    <button type="button" class="btn-action btn-reiniciar-totem" title="Recarregar conteúdo">
                         <i class="fas fa-redo-alt"></i>
                     </button>
+                    <button type="button" class="btn-action btn-revogar-totem" title="Revogar acesso"><i class="fas fa-ban"></i></button>
                     <button type="button" class="btn-action btn-excluir-totem" title="Excluir Totem">
                         <i class="fas fa-trash-alt"></i>
                     </button>
@@ -253,7 +236,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const reiniciar = linha.querySelector('.btn-reiniciar-totem');
         reiniciar.dataset.nome = totem.nome;
-        reiniciar.setAttribute('aria-label', `Reiniciar totem ${totem.id}`);
+        reiniciar.dataset.url = totem.urls.recarregar;
+        const revogar = linha.querySelector('.btn-revogar-totem');
+        revogar.dataset.url = totem.urls.revogar;
+        revogar.dataset.nome = totem.nome;
+        reiniciar.setAttribute('aria-label', `Recarregar conteúdo do totem ${totem.id}`);
 
         const excluir = linha.querySelector('.btn-excluir-totem');
         excluir.dataset.nome = totem.nome;
@@ -303,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function aplicarDadosSincronizados(dados) {
+        if (!pagina.isConnected) return;
         const linhasExistentes = new Map(
             Array.from(tabelaTotens.querySelectorAll('[data-totem-id]'))
                 .map((linha) => [linha.dataset.totemId, linha])
@@ -377,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function agendarSincronizacao() {
+        if (!pagina.isConnected) return;
         window.clearTimeout(temporizadorSincronizacao);
         temporizadorSincronizacao = window.setTimeout(async () => {
             if (!document.hidden) {
@@ -396,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sincronizarTotens();
             agendarSincronizacao();
         }
-    });
+    }, { signal: lifecycle.signal });
 
     agendarSincronizacao();
 
@@ -436,6 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const campoPaginaInicial = document.getElementById('pagina_inicial_id');
     const campoOrientacao = document.getElementById('totem_orientacao');
     const campoInatividade = document.getElementById('totem_inatividade_segundos');
+    const campoQuestionario = document.getElementById('questionario_ativo');
 
     const btnSalvar = document.getElementById(
         'btnSalvarCadastro'
@@ -518,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
             campoPaginaInicial.value = '';
             campoOrientacao.value = 'landscape';
             campoInatividade.value = '120';
+            campoQuestionario.checked = false;
         }
 
         formTotem.action = formTotem.dataset.urlCriar;
@@ -681,6 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
             campoPaginaInicial.value = dados.pagina_inicial_id ?? '';
             campoOrientacao.value = dados.totem_orientacao ?? 'landscape';
             campoInatividade.value = dados.totem_inatividade_segundos ?? 120;
+            campoQuestionario.checked = Boolean(dados.questionario_ativo);
 
             configurarBotaoSalvar('Salvar Alterações');
 
@@ -742,16 +734,6 @@ document.addEventListener('DOMContentLoaded', () => {
     modalTotem?.addEventListener('close', () => {
         numeroRequisicao++;
     });
-
-    /* =====================================
-       SUBMETER O MESMO FORMULÁRIO
-    ===================================== */
-
-    bloquearEnvio(
-        formTotem,
-        btnSalvar,
-        'Salvando...'
-    );
 
     /* =====================================
        REABRIR MODAL EM CASO DE ERROS
@@ -816,9 +798,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const resposta = await fetch(botao.dataset.url, {
+                method: 'POST',
                 credentials: 'same-origin',
                 cache: 'no-store',
-                headers: { 'Accept': 'application/json' },
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': pagina.dataset.csrfToken },
             });
             const dados = await resposta.json();
             if (atual !== requisicaoAcesso || !modalAcesso.open) return;
@@ -828,8 +811,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             urlAcesso.value = dados.url;
+            await QRCode.toCanvas(document.getElementById('pairingQrCode'), dados.url, { width: 220, margin: 2 });
             btnCopiarAcesso.disabled = false;
-            definirTexto('statusCopiaAcesso', `Página inicial: ${dados.pagina}`);
+            definirTexto('statusCopiaAcesso', `Código: ${dados.code} · Página inicial: ${dados.pagina} · Expira em 10 minutos`);
         } catch (erro) {
             if (atual !== requisicaoAcesso || !modalAcesso.open) return;
             erroAcesso.textContent = erro.message;
@@ -850,18 +834,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    tabelaTotens?.addEventListener('click', async (event) => {
+        const button = event.target.closest('.btn-revogar-totem');
+        if (!button) return;
+        const confirmed = await window.AdminNotice?.confirm({ type: 'danger', title: 'Revogar acesso?', message: `Os dispositivos pareados com ${button.dataset.nome} precisarão de um novo pareamento.`, confirmText: 'Revogar credenciais' });
+        if (!confirmed) return;
+        try {
+            const response = await fetch(button.dataset.url, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': pagina.dataset.csrfToken } });
+            if (!response.ok) throw new Error('Não foi possível revogar o acesso.');
+            window.AdminNotice?.success('As credenciais do equipamento foram revogadas.');
+        } catch (error) { window.AdminNotice?.error(error.message); }
+    });
+
     tabelaTotens?.addEventListener('click', async (evento) => {
         const botao = evento.target.closest('.btn-reiniciar-totem');
 
         if (!botao) return;
 
-        await window.AdminNotice?.alert({
-            type: 'info',
-            icon: 'fas fa-redo-alt',
-            title: 'Reiniciar Totem',
-            message: `${botao.dataset.nome}\n\nA reinicialização remota ainda não está configurada. Nenhum comando será enviado ao equipamento.`,
-            confirmText: 'Entendi',
+        const confirmed = await window.AdminNotice?.confirm({
+            type: 'info', icon: 'fas fa-sync-alt', title: 'Recarregar conteúdo?',
+            message: `${botao.dataset.nome}\n\nO player atualizará o conteúdo no próximo heartbeat.`,
+            confirmText: 'Solicitar recarga',
         });
+        if (!confirmed) return;
+        try {
+            const response = await fetch(botao.dataset.url, {
+                method: 'POST', credentials: 'same-origin',
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': pagina.dataset.csrfToken, 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            if (!response.ok) throw new Error('Não foi possível solicitar a recarga.');
+            window.AdminNotice?.success('O comando foi registrado.', 'Conteúdo será recarregado');
+        } catch (error) {
+            window.AdminNotice?.error(error.message, 'Erro ao solicitar recarga');
+        }
     });
 
     /* =====================================
@@ -890,8 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         formExclusao.action = botao.dataset.url;
-        botao.disabled = true;
-        formExclusao.submit();
+        await window.AdminNavigation?.submit(formExclusao);
     });
 
     /* =====================================
@@ -914,4 +918,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
+    return () => {
+        lifecycle.abort();
+        clearTimeout(temporizadorSincronizacao);
+    };
 });

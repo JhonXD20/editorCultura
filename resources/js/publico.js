@@ -1,6 +1,15 @@
 import { createInactivityTimer, useLandscapeLayout } from './totem-player';
+import { createPlayerSync } from './player-sync';
+import { mountQuestionnaire } from './visitor-questionnaire';
+import { createPlayerNavigation, PLAYER_INTERACTIVE_SELECTOR, sectionTapDirection } from './player-navigation';
 
-document.addEventListener('DOMContentLoaded', () => {
+let unmountPlayer = () => {};
+
+function mountPlayer() {
+    const lifecycle = new AbortController();
+    const disposers = [];
+    const listen = (target, type, handler, options = {}) => target.addEventListener(type, handler, { ...options, signal: lifecycle.signal });
+    const repeat = (handler, delay) => { const id = window.setInterval(handler, delay); disposers.push(() => clearInterval(id)); };
 
     const viewport = document.getElementById(
         'totemPublicoViewport'
@@ -104,6 +113,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     prepararLayoutBaseResponsivo();
 
+    canvas.querySelectorAll('[data-cultura-carousel="1"]').forEach((carousel) => {
+        const slides = [...carousel.querySelectorAll(':scope > [data-cultura-slide="1"]')];
+        let selected = 0;
+        const show = () => slides.forEach((slide, index) => {
+            slide.hidden = index !== selected;
+            slide.setAttribute('aria-hidden', String(index !== selected));
+        });
+        carousel.querySelectorAll('[data-carousel-direction]').forEach((button) => {
+            listen(button, 'click', () => {
+                if (!slides.length) return;
+                selected = (selected + Number(button.dataset.carouselDirection) + slides.length) % slides.length;
+                show();
+            });
+        });
+        show();
+    });
+
     if (!paginaResponsiva) {
         const publishedStyles = document.getElementById(
             'publishedPageStyles'
@@ -188,13 +214,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ajustarEscala();
 
-    window.addEventListener(
+    listen(window,
         'resize',
-        ajustarEscala
+        atualizarOrientacao
     );
 
     if (window.ResizeObserver) {
-        new ResizeObserver(ajustarEscala).observe(areaExibicao);
+        const observer = new ResizeObserver(ajustarEscala);
+        observer.observe(areaExibicao);
+        disposers.push(() => observer.disconnect());
     }
 
     const avisoOrientacao = document.getElementById('totemOrientationNotice');
@@ -208,8 +236,10 @@ document.addEventListener('DOMContentLoaded', () => {
         avisoOrientacao.textContent = orientacao === 'landscape'
             ? 'Gire o tablet para a horizontal para uma melhor experiência.'
             : 'Gire o tablet para a vertical para uma melhor experiência.';
+        const hint = document.getElementById('sectionTouchHint');
+        if (hint) hint.style.top = divergente ? `${avisoOrientacao.offsetTop + avisoOrientacao.offsetHeight + 8}px` : '';
     }
-    telaHorizontal.addEventListener?.('change', atualizarOrientacao);
+    listen(telaHorizontal, 'change', atualizarOrientacao);
     atualizarOrientacao();
 
     /* =====================================
@@ -220,6 +250,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlInteracao = viewport.dataset.interacaoUrl;
     const urlPing = viewport.dataset.pingUrl;
     const csrfToken = viewport.dataset.csrfToken;
+    const urlManifest = viewport.dataset.manifestUrl;
+    const playerStatus = document.getElementById('playerSyncStatus');
+    disposers.push(mountQuestionnaire({
+        deviceId: viewport.dataset.deviceId, signal: lifecycle.signal,
+        onStatus: (message) => {
+            if (playerStatus) playerStatus.textContent = message;
+            const status = document.getElementById('questionnaireStatus');
+            if (status) status.textContent = message;
+        },
+    }));
+    const sincronizarManifesto = createPlayerSync({
+        manifestUrl: urlManifest,
+        currentVersion: viewport.dataset.manifestVersion,
+        onStatus: (message) => { if (!lifecycle.signal.aborted && playerStatus) playerStatus.textContent = message; },
+        onUpdate: (manifest) => {
+            if (lifecycle.signal.aborted) return;
+            const pageExists = manifest.pages.some((page) => String(page.id) === paginaId);
+            if (pageExists) window.location.reload();
+            else window.location.replace(`/totem/exibir/${manifest.totem.home_page_id}`);
+        },
+        onRevoked: () => {
+            if (lifecycle.signal.aborted) return;
+            indexedDB.deleteDatabase('totemsync-player');
+            indexedDB.deleteDatabase('totemsync-questionnaire');
+            window.location.reload();
+        },
+    });
 
     function registrarPing() {
         if (!urlPing || !csrfToken) {
@@ -234,75 +291,81 @@ document.addEventListener('DOMContentLoaded', () => {
                 'X-CSRF-TOKEN': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
             },
-        }).catch(() => {
+        }).then((response) => { if (response.status === 401) sincronizarManifesto(); }).catch(() => {
             // O proximo ciclo tentara novamente sem interromper o totem.
         });
     }
 
     registrarPing();
-    window.setInterval(registrarPing, 60_000);
+    repeat(registrarPing, 60_000);
 
-    function registrarInteracao(
-        tipo,
-        duracaoSegundos = null
-    ) {
+    sincronizarManifesto();
+    repeat(sincronizarManifesto, 30_000);
+    listen(window, 'online', sincronizarManifesto);
+    listen(window, 'focus', sincronizarManifesto);
 
-        if (
-            !paginaId ||
-            !urlInteracao ||
-            !csrfToken
-        ) {
-            return;
-        }
+    const telemetryDb = () => new Promise((resolve, reject) => {
+        const open = indexedDB.open('totemsync-player', 1);
+        open.onupgradeneeded = () => open.result.createObjectStore('telemetry', { keyPath: 'uuid' });
+        open.onsuccess = () => resolve(open.result);
+        open.onerror = () => reject(open.error);
+    });
 
-        const dados = new URLSearchParams();
-
-        dados.append('_token', csrfToken);
-        dados.append('pagina_id', paginaId);
-        dados.append('tipo', tipo);
-
-        if (duracaoSegundos !== null) {
-            dados.append(
-                'duracao_segundos',
-                String(duracaoSegundos)
-            );
-        }
-
-        // sendBeacon é adequado para eventos
-        // enviados durante uma navegação.
-        if (navigator.sendBeacon) {
-
-            const enviado = navigator.sendBeacon(
-                urlInteracao,
-                dados
-            );
-
-            if (enviado) {
-                return;
-            }
-        }
-
-        // Alternativa para navegadores sem sendBeacon
-        fetch(urlInteracao, {
-            method: 'POST',
-
-            credentials: 'same-origin',
-
-            keepalive: true,
-
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-
-            body: dados,
-        }).catch((erro) => {
-            console.warn(
-                'Não foi possível registrar a interação:',
-                erro
-            );
+    async function enqueueTelemetry(event) {
+        const db = await telemetryDb();
+        await new Promise((resolve, reject) => {
+            const request = db.transaction('telemetry', 'readwrite').objectStore('telemetry').put(event);
+            request.onsuccess = resolve;
+            request.onerror = () => reject(request.error);
         });
+        db.close();
+        flushTelemetry();
     }
+
+    let flushingTelemetry = false;
+    async function flushTelemetry() {
+        if (!urlInteracao || !navigator.onLine || flushingTelemetry) return;
+        flushingTelemetry = true;
+        try {
+            const db = await telemetryDb();
+            const events = await new Promise((resolve, reject) => {
+                const request = db.transaction('telemetry').objectStore('telemetry').getAll();
+                request.onsuccess = () => resolve(request.result.filter((event) => String(event.device_id) === viewport.dataset.deviceId).slice(0, 100));
+                request.onerror = () => reject(request.error);
+            });
+            if (!events.length) { db.close(); return; }
+            const response = await fetch(urlInteracao, {
+                method: 'POST', credentials: 'same-origin', keepalive: true,
+                headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ events }),
+            });
+            if (!response.ok) { db.close(); return; }
+            const result = await response.json();
+            const acknowledged = new Set(result.acknowledged);
+            const rejected = new Set((result.rejected || []).filter((event) => event.retryable === false).map((event) => event.uuid));
+            const transaction = db.transaction('telemetry', 'readwrite');
+            events.filter((event) => acknowledged.has(event.uuid) || rejected.has(event.uuid)).forEach((event) => transaction.objectStore('telemetry').delete(event.uuid));
+            if (rejected.size && playerStatus) playerStatus.textContent = `${rejected.size} registro(s) não aceito(s): página indisponível ou identificador conflitante.`;
+            transaction.oncomplete = () => db.close();
+        } catch (_) { /* permanece na fila para o próximo ciclo */ }
+        finally { flushingTelemetry = false; }
+    }
+
+    function registrarInteracao(tipo, duracaoSegundos = null) {
+        if (!paginaId || !urlInteracao) return;
+        enqueueTelemetry({
+            uuid: crypto.randomUUID(),
+            device_id: viewport.dataset.deviceId,
+            pagina_id: Number(paginaId),
+            tipo,
+            duracao_segundos: duracaoSegundos,
+            occurred_at: new Date().toISOString(),
+        }).catch(() => {});
+    }
+
+    listen(window, 'online', flushTelemetry);
+    repeat(flushTelemetry, 30_000);
+    flushTelemetry();
 
     function registrarToque() {
         registrarInteracao('toque');
@@ -316,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!elemento) return;
 
-        elemento.addEventListener(
+        listen(elemento,
             'pointerdown',
             (evento) => {
 
@@ -366,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    document.addEventListener(
+    listen(document,
         'visibilitychange',
         () => {
 
@@ -378,7 +441,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     );
 
-    window.addEventListener(
+    listen(window,
         'pagehide',
         finalizarPeriodoVisivel
     );
@@ -401,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function navegar(url) {
         if (url) {
-            window.location.assign(url);
+            void navigatePlayer(url);
         }
     }
 
@@ -417,21 +480,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tempoInativo > 0 && inicialUrl && String(paginaId) !== viewport.dataset.paginaInicialId) {
         const inatividade = createInactivityTimer({
             timeoutMs: tempoInativo * 1000,
-            onIdle: () => window.location.replace(inicialUrl),
+            onIdle: () => { void navigatePlayer(inicialUrl); },
         });
 
+        disposers.push(inatividade.stop);
+
         ['pointerdown', 'keydown', 'wheel', 'scroll', 'input']
-            .forEach((evento) => document.addEventListener(
+            .forEach((evento) => listen(document,
                 evento, inatividade.reset, { passive: true, capture: true }
             ));
 
-        document.addEventListener('visibilitychange', () => {
+        listen(document, 'visibilitychange', () => {
             if (document.hidden) inatividade.pause();
             else inatividade.resume();
         });
         if (document.hidden) inatividade.pause();
-        window.addEventListener('pagehide', inatividade.pause);
-        window.addEventListener('pageshow', (evento) => {
+        listen(window, 'pagehide', inatividade.pause);
+        listen(window, 'pageshow', (evento) => {
             if (evento.persisted) inatividade.resume();
         });
     }
@@ -439,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const telaCheia = document.getElementById('totemFullscreen');
     if (telaCheia && document.documentElement.requestFullscreen) {
         telaCheia.hidden = false;
-        telaCheia.addEventListener('click', async () => {
+        listen(telaCheia, 'click', async () => {
             try {
                 if (document.fullscreenElement) await document.exitFullscreen();
                 else await document.documentElement.requestFullscreen();
@@ -447,12 +512,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // O navegador pode negar a solicitação; a navegação continua disponível.
             }
         });
-        document.addEventListener('fullscreenchange', () => {
+        const atualizarTelaCheia = () => {
             telaCheia.setAttribute('aria-label', document.fullscreenElement
                 ? 'Sair da tela cheia' : 'Entrar em tela cheia');
             telaCheia.querySelector('i').className = document.fullscreenElement
                 ? 'fas fa-compress' : 'fas fa-expand';
-        });
+        };
+        listen(document, 'fullscreenchange', atualizarTelaCheia);
+        atualizarTelaCheia();
     }
 
     /* =====================================
@@ -470,11 +537,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        botao.addEventListener('click', () => {
+        listen(botao, 'click', () => {
             navegar(destino);
         });
 
-        botao.addEventListener(
+        listen(botao,
             'keydown',
             (evento) => {
 
@@ -491,33 +558,78 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     });
 
-    canvas.querySelectorAll(
-        '[data-cultura-navigation="1"][data-page-id]'
-    ).forEach((botao) => {
-        const paginaDestino = botao.dataset.pageId;
-
-        if (!/^\d+$/.test(paginaDestino || '') || !paginaUrlTemplate) {
-            return;
+    const sectionEntries = JSON.parse(viewport.dataset.sectionEntries || '{}');
+    const destinationFor = (element) => {
+        const section = element.getAttribute('data-section-id');
+        const page = section !== null ? sectionEntries[section] : element.dataset.pageId;
+        return /^\d+$/.test(String(page || '')) && paginaUrlTemplate
+            ? paginaUrlTemplate.replace('__PAGE_ID__', page) : '';
+    };
+    canvas.querySelectorAll('[data-cultura-navigation="1"]').forEach((element) => {
+        if (!element.matches('a, button')) {
+            element.tabIndex = 0;
+            element.setAttribute('role', 'link');
         }
-
-        botao.addEventListener('click', () => {
-            navegar(
-                paginaUrlTemplate.replace(
-                    '__PAGE_ID__',
-                    paginaDestino
-                )
-            );
-        });
+        if (!destinationFor(element)) element.setAttribute('aria-disabled', 'true');
     });
+    listen(canvas, 'click', (event) => {
+        const element = event.target.closest('[data-cultura-navigation="1"]');
+        if (!element || !canvas.contains(element) || event.defaultPrevented) return;
+        // Nested controls, such as a video inside a linked card, keep their behavior.
+        const control = event.target.closest('a, button, video, audio, details, summary, [data-carousel-direction]');
+        if (control && control !== element && element.contains(control)) return;
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        navegar(destinationFor(element));
+    });
+    listen(canvas, 'keydown', (event) => {
+        const element = event.target.closest('[data-cultura-navigation="1"]');
+        if (!element || event.target !== element || element.matches('button') || (element.matches('a') && event.key === 'Enter') || !['Enter', ' '].includes(event.key) || event.repeat) return;
+        event.preventDefault();
+        registrarToque();
+        navegar(destinationFor(element));
+    });
+
+    if (viewport.dataset.sectionNavigation === '1') {
+        let tap;
+        listen(areaExibicao, 'pointerdown', (event) => {
+            if (tap || event.isPrimary === false || event.button !== 0) { tap = null; return; }
+            tap = { id: event.pointerId, x: event.clientX, y: event.clientY, time: performance.now(), interactive: Boolean(event.target.closest(PLAYER_INTERACTIVE_SELECTOR)) };
+        });
+        listen(areaExibicao, 'pointercancel', () => { tap = null; });
+        listen(areaExibicao, 'pointermove', (event) => {
+            if (tap && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > 12) tap = null;
+        });
+        listen(areaExibicao, 'scroll', () => { tap = null; }, { capture: true, passive: true });
+        listen(areaExibicao, 'pointerup', (event) => {
+            const start = tap;
+            tap = null;
+            if (!start || start.id !== event.pointerId || event.isPrimary === false) return;
+            const direction = sectionTapDirection({
+                start, end: { x: event.clientX, y: event.clientY }, bounds: areaExibicao.getBoundingClientRect(),
+                elapsed: performance.now() - start.time,
+                interactive: start.interactive || Boolean(event.target.closest(PLAYER_INTERACTIVE_SELECTOR)),
+                selectedText: Boolean(window.getSelection()?.toString()),
+            });
+            if (direction === 'previous') irEsquerda();
+            if (direction === 'next') irDireita();
+        });
+        const hint = document.getElementById('sectionTouchHint');
+        if (hint) {
+            const timeout = setTimeout(() => { hint.hidden = true; }, 7000);
+            disposers.push(() => clearTimeout(timeout));
+        }
+    }
 
     /* =====================================
        7. NAVEGAÇÃO POR TECLADO
     ===================================== */
 
-    document.addEventListener(
+    listen(document,
         'keydown',
         (evento) => {
 
+            if (document.querySelector('dialog[open]')) return;
             if (
                 evento.target.closest(
                     'input, textarea, select, button, a, [contenteditable="true"], [role="button"], [role="link"]'
@@ -544,4 +656,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     );
 
-});
+    unmountPlayer = () => {
+        finalizarPeriodoVisivel();
+        lifecycle.abort();
+        disposers.forEach((dispose) => dispose());
+    };
+}
+
+const navigatePlayer = createPlayerNavigation({ beforeReplace: () => unmountPlayer(), afterReplace: mountPlayer });
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountPlayer, { once: true });
+else mountPlayer();

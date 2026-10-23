@@ -1,0 +1,148 @@
+name: totemsync
+
+x-app: &app
+  image: ${APP_IMAGE:-totemsync-app:local}
+  build:
+    context: .
+    target: app
+  env_file: ${APP_ENV_FILE:-.env.production}
+  restart: unless-stopped
+  init: true
+  security_opt: [no-new-privileges:true]
+  mem_limit: 512m
+  cpus: 1.0
+  logging:
+    driver: json-file
+    options: { max-size: 10m, max-file: '3' }
+  networks: [private]
+  volumes:
+    - app-storage:/var/www/html/storage
+  depends_on:
+    mysql: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+services:
+  app:
+    <<: *app
+    read_only: true
+    tmpfs: [/tmp, '/var/www/html/bootstrap/cache:uid=82,gid=101,mode=0750']
+
+  queue:
+    <<: *app
+    command: php artisan queue:work redis --sleep=3 --tries=3 --timeout=120 --max-time=3600
+    stop_grace_period: 2m
+    healthcheck:
+      test: [CMD, php, artisan, about, --only=environment]
+      interval: 60s
+      timeout: 10s
+
+  scheduler:
+    <<: *app
+    command: php artisan schedule:work
+    healthcheck:
+      test: [CMD, php, artisan, schedule:list]
+      interval: 60s
+      timeout: 10s
+
+  nginx:
+    image: ${WEB_IMAGE:-totemsync-web:local}
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    command: /bin/sh -c '(while sleep 21600; do nginx -s reload; done) & exec nginx -g "daemon off;"'
+    ports: ["80:8080", "443:8443"]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    mem_limit: 128m
+    networks: [private]
+    volumes:
+      - app-storage:/var/www/html/storage:ro
+      - certbot-web:/var/www/certbot:ro
+      - letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      app: { condition: service_healthy }
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    user: mysql
+    mem_limit: 1g
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks: [private]
+    volumes: [mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    user: redis
+    mem_limit: 256m
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    networks: [private]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+    entrypoint: /bin/sh
+    command: -c 'while :; do certbot renew --webroot -w /var/www/certbot --deploy-hook "sh /hooks/permissions.sh" --quiet; sleep 12h; done'
+    volumes:
+      - certbot-web:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+      - ./docker/certbot:/hooks:ro
+
+  certbot-bootstrap:
+    image: certbot/certbot:latest
+    profiles: [tls-bootstrap]
+    ports: ["80:80"]
+    command: certonly --standalone --non-interactive --agree-tos --email ${CERTBOT_EMAIL} --domains ${APP_DOMAIN} --deploy-hook "sh /hooks/permissions.sh"
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+      - ./docker/certbot:/hooks:ro
+
+  backup:
+    image: ${BACKUP_IMAGE:-totemsync-backup:local}
+    build:
+      context: .
+      dockerfile: docker/backup/Dockerfile
+    restart: unless-stopped
+    env_file: ${APP_ENV_FILE:-.env.production}
+    user: 999:101
+    mem_limit: 512m
+    networks: [private]
+    volumes:
+      - app-storage:/data/media:ro
+    depends_on:
+      mysql: { condition: service_healthy }
+
+networks:
+  private:
+    internal: false
+
+volumes:
+  app-storage:
+  mysql-data:
+  redis-data:
+  certbot-web:
+  letsencrypt:

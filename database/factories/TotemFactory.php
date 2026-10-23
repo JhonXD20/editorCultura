@@ -17,8 +17,7 @@ class TotemFactory extends Factory
         return [
             'totem_orientacao' => 'landscape',
             'totem_inatividade_segundos' => 120,
-            'totem_nome_identificacao' =>
-            'TESTE - Totem ' . fake()->unique()->bothify('??-###'),
+            'totem_nome_identificacao' => 'TESTE - Totem '.fake()->unique()->bothify('??-###'),
 
             'totem_localizacao' => fake()->randomElement([
                 'Hall de Entrada',

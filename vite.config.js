@@ -12,16 +12,15 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/css/admin-notifications.css',
                 'resources/js/admin-notifications.js',
+                'resources/js/admin-navigation.js',
                 'resources/css/admin-theme.css',
                 'resources/css/login.css',
                 'resources/js/login.js',
                 'resources/js/theme.js',
 
                 'resources/css/totem.css',
-                'resources/css/editor.css',
                 'resources/css/publico.css',
 
-                'resources/js/editor.js',
                 'resources/js/grapes-editor.js',
                 'resources/js/publico.js',
 

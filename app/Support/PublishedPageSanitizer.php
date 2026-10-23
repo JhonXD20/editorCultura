@@ -12,8 +12,8 @@ final class PublishedPageSanitizer
     private const ALLOWED_TAGS = [
         'a', 'article', 'b', 'blockquote', 'br', 'button', 'div', 'em',
         'footer', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr',
-        'i', 'img', 'li', 'main', 'nav', 'ol', 'p', 'section', 'source',
-        'span', 'strong', 'sub', 'sup', 'u', 'ul', 'video',
+        'i', 'img', 'li', 'main', 'nav', 'ol', 'p', 'section', 'source', 'figure', 'figcaption',
+        'span', 'strong', 'sub', 'sup', 'u', 'ul', 'video', 'details', 'summary',
     ];
 
     private const DROP_WITH_CONTENT = [
@@ -81,6 +81,9 @@ final class PublishedPageSanitizer
         }
 
         $css = preg_replace('~/\*.*?\*/~s', '', $css) ?? '';
+        if (str_contains($css, '\\') || str_contains($css, '<')) {
+            self::fail('O CSS contém caracteres não permitidos.');
+        }
 
         if (preg_match(
             '/(?:@import|@font-face|@namespace|expression\s*\(|url\s*\(|javascript:|vbscript:|behavior\s*:|-moz-binding|<\/?style)/i',
@@ -137,6 +140,7 @@ final class PublishedPageSanitizer
             'img' => ['alt', 'height', 'loading', 'src', 'width'],
             'source' => ['src', 'type'],
             'video' => ['autoplay', 'controls', 'height', 'loop', 'muted', 'playsinline', 'poster', 'preload', 'src', 'width'],
+            'details' => ['open'],
         ];
 
         foreach (iterator_to_array($element->attributes) as $attribute) {
@@ -212,6 +216,9 @@ final class PublishedPageSanitizer
     private static function safeUrl(string $url, bool $allowLink): bool
     {
         $url = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if (preg_match('/[\x00-\x20\\\\]/', $url) || str_starts_with($url, '//')) {
+            return false;
+        }
 
         if ($url === '' || str_starts_with($url, '/') || str_starts_with($url, '#')) {
             return true;

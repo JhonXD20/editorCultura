@@ -1,244 +1,125 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\ConteudoController;
-// Controllers
+use App\Http\Controllers\Auth\AccessLinkController;
+use App\Http\Controllers\Auth\AccessPasswordController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\InteracaoTotemController;
+use App\Http\Controllers\MediaController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaginaController;
+use App\Http\Controllers\QuestionnaireController;
 use App\Http\Controllers\RelatorioController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SecaoController;
 use App\Http\Controllers\TotemController;
 use App\Http\Controllers\TotemPublicController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\VisualEditorController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
-/*
-|--------------------------------------------------------------------------
-| ROTAS DE AUTENTICAÇÃO
-|--------------------------------------------------------------------------
-|
-| Login, logout, recuperação de senha e demais rotas
-| disponibilizadas pelo Laravel Auth.
-|
-*/
+Auth::routes(['register' => false, 'reset' => false]);
+Route::get('/password/reset', [AccessLinkController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/password/email', [AccessLinkController::class, 'sendResetLinkEmail'])->middleware('throttle:5,1')->name('password.email');
+Route::get('/password/reset/{token}', [AccessPasswordController::class, 'showResetForm'])->middleware('throttle:30,1')->name('password.reset');
+Route::post('/password/reset', [AccessPasswordController::class, 'reset'])->middleware('throttle:20,1')->name('password.update');
 
-// O sistema e administrativo: novas contas devem ser provisionadas
-// de forma controlada, nunca por cadastro publico.
-Auth::routes(['register' => false]);
+Route::get('/', fn () => redirect()->route(Auth::check() ? 'admin' : 'login'))->name('inicio');
+Route::get('/home', [HomeController::class, 'index'])->name('home');
+Route::get('/totem/img/uploads/{filename}', function (string $filename) {
+    abort_unless(preg_match('/^[a-zA-Z0-9_.-]+$/', $filename), 404);
+    abort_unless(Storage::disk('public')->exists('media/legacy/'.$filename), 404);
 
-/*
-|--------------------------------------------------------------------------
-| ROTAS PÚBLICAS
-|--------------------------------------------------------------------------
-|
-| Páginas que não exigem autenticação.
-|
-*/
+    return redirect('/storage/media/legacy/'.$filename, 301);
+})->name('media.legacy');
 
-// Entrada da aplicacao.
-Route::get('/', function () {
-    return redirect()->route(
-        Auth::check() ? 'admin' : 'login'
-    );
-})->name('inicio');
+Route::middleware('throttle:20,1')->group(function (): void {
+    Route::get('/parear/{code}', [DeviceController::class, 'pairingForm'])
+        ->where('code', '[0-9]{6}')->name('device.pair.form');
+    Route::post('/parear', [DeviceController::class, 'pair'])->name('device.pair');
+});
 
-// Compatibilidade com o redirecionamento padrao do Laravel UI.
-Route::get('/home', [
-    HomeController::class,
-    'index',
-])->name('home');
+Route::middleware('device')->group(function (): void {
+    Route::post('/device/questionnaire', [QuestionnaireController::class, 'store'])
+        ->middleware('throttle:30,1')->name('device.questionnaire');
+    Route::get('/totem/exibir/{pagina}', [TotemPublicController::class, 'exibir'])
+        ->whereNumber('pagina')->name('totem.exibir');
+    Route::get('/device/manifest', [DeviceController::class, 'manifest'])->name('device.manifest');
+    Route::post('/device/heartbeat', [DeviceController::class, 'heartbeat'])
+        ->middleware('throttle:10,1')->name('device.heartbeat');
+    Route::post('/device/telemetry', [DeviceController::class, 'telemetry'])
+        ->middleware('throttle:300,1')->name('device.telemetry');
+});
 
-// Exibição pública do conteúdo nos totens
-Route::get('/totem/exibir/{id}', [
-    TotemPublicController::class,
-    'exibir',
-])->whereNumber('id')
-    ->name('totem.exibir');
+Route::middleware(['auth', 'active'])->group(function (): void {
+    Route::get('/minha-conta/senha', [AccountController::class, 'password'])->name('account.password.edit');
+    Route::put('/minha-conta/senha', [AccountController::class, 'changePassword'])->middleware('throttle:6,1')->name('account.password.update');
+    Route::get('/minha-conta', [AccountController::class, 'edit'])->name('account.edit');
+    Route::put('/minha-conta', [AccountController::class, 'update'])->middleware('throttle:6,1')->name('account.update');
+    Route::get('/notificacoes', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notificacoes/{id}/lida', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::get('/pairing', [DeviceController::class, 'pairingIndex'])->name('pairing.index');
+    Route::post('/pairing', [DeviceController::class, 'pairWithAccount'])->middleware('throttle:10,1')->name('pairing.store');
+    Route::get('/admin', [AdminController::class, 'index'])->middleware('can:edit-content')->name('admin');
 
-// Registra as interações da exibição pública.
-Route::post('/totem/interacoes', [
-    InteracaoTotemController::class,
-    'store',
-])
-    ->middleware('throttle:300,1')
-    ->name('totem.interacoes.store');
-
-// Mantem o status do equipamento associado a sessao atualizado.
-Route::post('/totem/ping', [
-    InteracaoTotemController::class,
-    'ping',
-])
-    ->middleware('throttle:10,1')
-    ->name('totem.ping');
-
-// Associa um navegador de totem a um equipamento.
-// A URL precisa ter uma assinatura válida do Laravel.
-Route::get('/totem/iniciar/{totem}/{pagina}', [
-    TotemPublicController::class,
-    'iniciar',
-])
-    ->middleware('signed')
-    ->name('totem.iniciar');
-
-/*
-|--------------------------------------------------------------------------
-| ROTAS ADMINISTRATIVAS
-|--------------------------------------------------------------------------
-|
-| Todas as rotas deste grupo exigem autenticação.
-|
-*/
-
-Route::middleware(['auth'])->group(function () {
-
-    /*
-|--------------------------------------------------------------------------
-| DASHBOARD ADMINISTRATIVO
-|--------------------------------------------------------------------------
-*/
-
-    Route::get('/admin', [
-        AdminController::class,
-        'index',
-    ])->name('admin');
-
-    /*
-    |--------------------------------------------------------------------------
-    | GERENCIAMENTO DE CONTEÚDOS
-    |--------------------------------------------------------------------------
-    */
-
-    Route::prefix('gestao-conteudo')->group(function () {
-
-        Route::post('/editor/upload', [
-            VisualEditorController::class,
-            'upload',
-        ])->name('editor-visual.upload');
-
-        Route::put('/{pagina}/editor', [
-            VisualEditorController::class,
-            'save',
-        ])->whereNumber('pagina')
-            ->name('editor-visual.save');
-
-        Route::post('/{pagina}/publicar-editor', [
-            VisualEditorController::class,
-            'publish',
-        ])->whereNumber('pagina')
-            ->name('editor-visual.publish');
-
-        // Salvar conteúdo individual
-        Route::post('/salvar', [
-            ConteudoController::class,
-            'store',
-        ])->name('conteudos.store');
-
-        // Salvar múltiplos blocos do editor
-        Route::post('/salvar-massa', [
-            ConteudoController::class,
-            'salvarEmMassa',
-        ])->name('conteudos.salvar-em-massa');
-
-        // Upload de imagens
-        Route::post('/upload-imagem', [
-            ConteudoController::class,
-            'uploadImagem',
-        ])->name('conteudos.upload-imagem');
-
-        // Publicar conteúdo
-        Route::post('/publicar', [
-            ConteudoController::class,
-            'publicar',
-        ])->name('conteudos.publicar');
+    Route::middleware('can:edit-content')->prefix('gestao-conteudo')->group(function (): void {
+        Route::post('/editor/upload', [VisualEditorController::class, 'upload'])->name('editor-visual.upload');
+        Route::put('/{pagina}/editor', [VisualEditorController::class, 'save'])->whereNumber('pagina')->name('editor-visual.save');
+        Route::post('/{pagina}/enviar-revisao', [VisualEditorController::class, 'submit'])->whereNumber('pagina')->name('editor-visual.submit');
+        Route::post('/{pagina}/publicar-editor', [VisualEditorController::class, 'publish'])->whereNumber('pagina')->name('editor-visual.publish');
+        Route::post('/{pagina}/duplicar', [PaginaController::class, 'duplicate'])->name('gestao-conteudo.duplicate');
+        Route::get('/{pagina}/visualizar', [TotemPublicController::class, 'preview'])->name('gestao-conteudo.preview');
+        Route::get('/{pagina}/historico', [ReviewController::class, 'history'])->name('revisions.index');
     });
 
-    /*
-    |--------------------------------------------------------------------------
-    | GERENCIAMENTO DE PÁGINAS
-    |--------------------------------------------------------------------------
-    |
-    | Expõe somente as operações implementadas pelo controlador.
-    */
+    Route::resource('gestao-conteudo', PaginaController::class)
+        ->only(['index', 'store', 'edit', 'update', 'destroy'])
+        ->parameters(['gestao-conteudo' => 'gestao_conteudo'])
+        ->middleware('can:edit-content');
 
-    Route::resource(
-        'gestao-conteudo',
-        PaginaController::class
-    )->only([
-        'index',
-        'store',
-        'edit',
-        'update',
-        'destroy',
-    ])->parameters([
-        'gestao-conteudo' => 'gestao_conteudo',
-    ]);
+    Route::middleware('can:administer')->group(function (): void {
+        Route::get('/avaliacoes', [QuestionnaireController::class, 'index'])->name('questionnaires.index');
+        Route::post('/secoes', [SecaoController::class, 'store'])->name('secoes.store');
+        Route::put('/secoes/{secao}', [SecaoController::class, 'update'])->whereNumber('secao')->name('secoes.update');
+        Route::put('/secoes/{secao}/ordem', [SecaoController::class, 'reorder'])->whereNumber('secao')->name('secoes.reorder');
+        Route::post('/gestao-conteudo/{pagina}/definir-inicial', [PaginaController::class, 'setHome'])
+            ->name('gestao-conteudo.set-home');
+        Route::get('/revisoes', [ReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/revisoes/{review}/visualizar', [ReviewController::class, 'preview'])->name('reviews.preview');
+        Route::post('/revisoes/{review}/aprovar', [ReviewController::class, 'approve'])->name('reviews.approve');
+        Route::post('/revisoes/{review}/devolver', [ReviewController::class, 'reject'])->name('reviews.reject');
+        Route::post('/paginas/{pagina}/revisoes/{revision}/restaurar', [ReviewController::class, 'restore'])
+            ->name('reviews.restore');
+        Route::resource('usuarios', UserController::class)->only(['index', 'store', 'update'])->parameters(['usuarios' => 'user']);
+        Route::post('/usuarios/{user}/revogar-sessoes', [UserController::class, 'revokeSessions'])
+            ->middleware('throttle:6,1')
+            ->name('usuarios.revoke-sessions');
+        Route::post('/usuarios/{user}/resetar-senha', [UserController::class, 'resetPassword'])
+            ->middleware('throttle:6,1')->name('usuarios.reset-password');
+    });
 
-    /*
-|--------------------------------------------------------------------------
-| MONITORAMENTO E CADASTRO DE TOTENS
-|--------------------------------------------------------------------------
-*/
+    Route::middleware('can:edit-content')->group(function (): void {
+        Route::resource('midias', MediaController::class)->only(['index', 'store', 'destroy'])->parameters(['midias' => 'medium']);
+    });
 
-    Route::prefix('totens')
-        ->name('admin.totens.')
-        ->group(function () {
+    Route::prefix('totens')->name('admin.totens.')->middleware('can:pair-device')->group(function (): void {
+        Route::get('/', [TotemController::class, 'index'])->name('index');
+        Route::get('/monitoramento/tempo-real', [TotemController::class, 'status'])->name('status');
+        Route::post('/{totem}/acesso', [TotemController::class, 'acesso'])->whereNumber('totem')->middleware('throttle:20,1')->name('acesso');
+        Route::get('/{totem}', [TotemController::class, 'show'])->whereNumber('totem')->name('show');
+    });
 
-            // Listar totens
-            Route::get('/', [
-                TotemController::class,
-                'index',
-            ])->name('index');
+    Route::prefix('totens')->name('admin.totens.')->middleware('can:administer')->group(function (): void {
+        Route::post('/', [TotemController::class, 'store'])->name('store');
+        Route::put('/{totem}', [TotemController::class, 'update'])->whereNumber('totem')->name('update');
+        Route::delete('/{totem}', [TotemController::class, 'destroy'])->whereNumber('totem')->name('destroy');
+        Route::post('/{totem}/recarregar', [TotemController::class, 'reload'])->name('reload');
+        Route::post('/{totem}/revogar', [TotemController::class, 'revoke'])->name('revoke');
+    });
 
-            // Cadastrar
-            Route::post('/', [
-                TotemController::class,
-                'store',
-            ])->name('store');
-
-            // Dados leves usados pela atualizacao automatica da tela.
-            Route::get('/monitoramento/tempo-real', [
-                TotemController::class,
-                'status',
-            ])->name('status');
-
-            // Buscar os dados atuais do totem (JSON)
-            Route::get('/{totem}/acesso', [
-                TotemController::class,
-                'acesso',
-            ])->whereNumber('totem')->name('acesso');
-
-            Route::get('/{totem}', [
-                TotemController::class,
-                'show',
-            ])->whereNumber('totem')
-                ->name('show');
-
-            // Atualizar
-            Route::put('/{totem}', [
-                TotemController::class,
-                'update',
-            ])->whereNumber('totem')
-                ->name('update');
-
-            // Excluir
-            Route::delete('/{totem}', [
-                TotemController::class,
-                'destroy',
-            ])->whereNumber('totem')
-                ->name('destroy');
-        });
-
-    /*
-|--------------------------------------------------------------------------
-| RELATÓRIOS DE USO
-|--------------------------------------------------------------------------
-*/
-
-    Route::get('/relatorios', [
-        RelatorioController::class,
-        'index',
-    ])
-        ->middleware('auth')
-        ->name('relatorios');
+    Route::get('/relatorios', [RelatorioController::class, 'index'])
+        ->middleware('can:administer')->name('relatorios');
 });

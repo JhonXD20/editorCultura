@@ -67,3 +67,8 @@
         width: 100%;
     }
 }
+
+#adminMainContent[aria-busy="true"] {
+    opacity: .75;
+    transition: opacity .15s ease;
+}

@@ -115,6 +115,18 @@ const showModal = (options = {}, alertOnly = false) => {
     cancel.hidden = alertOnly;
     confirm.textContent = options.confirmText || (alertOnly ? 'Entendi' : 'Confirmar');
     confirm.className = `btn btn-${config.className}`;
+    const challenge = document.getElementById('adminNoticeChallenge');
+    const email = document.getElementById('adminNoticeEmail');
+    const password = document.getElementById('adminNoticePassword');
+    challenge.hidden = !options.confirmEmail;
+    email.value = '';
+    password.value = '';
+    const validate = () => {
+        confirm.disabled = Boolean(options.confirmEmail) && (email.value !== options.confirmEmail || !password.value);
+    };
+    email.oninput = validate;
+    password.oninput = validate;
+    validate();
     modalResult = false;
 
     return new Promise((resolve) => {
@@ -134,6 +146,7 @@ if (modal && $ && typeof $.fn?.modal === 'function') {
     });
 
     document.getElementById('adminNoticeConfirm')?.addEventListener('click', () => {
+        if (document.getElementById('adminNoticeConfirm').disabled) return;
         modalResult = true;
         $(modal).modal('hide');
     });
@@ -149,7 +162,7 @@ window.AdminNotice = {
     alert: (options) => showModal(options, true),
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+const displayNotifications = () => {
     const configElement = document.getElementById('adminNotificationsConfig');
     if (!configElement) return;
 
@@ -161,4 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
         console.error('Não foi possível carregar as notificações da página.', error);
     }
-});
+};
+document.addEventListener('DOMContentLoaded', displayNotifications);
+document.addEventListener('admin:loaded', displayNotifications);
